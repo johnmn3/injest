@@ -1,49 +1,38 @@
-(ns injest.core)
+(ns injest.core
+  #?(:cljs (:require-macros [injest.core])))
 
-(def transducables
-  #{(symbol 'map)
-    (symbol 'cat) 
-    (symbol 'mapcat) 
-    (symbol 'filter)
-    (symbol 'remove) 
-    (symbol 'take) 
-    (symbol 'take-while) 
-    (symbol 'take-nth) 
-    (symbol 'drop) 
-    (symbol 'drop-while) 
-    (symbol 'replace) 
-    (symbol 'partition-by) 
-    (symbol 'partition-all) 
-    (symbol 'keep) 
-    (symbol 'keep-indexed) 
-    (symbol 'map-indexed) 
-    (symbol 'distinct) 
-    (symbol 'interpose) 
-    (symbol 'dedupe) 
-    (symbol 'random-sample)})
+(def default-transducables
+  #{`map
+    `cat 
+    `mapcat 
+    `filter
+    `remove 
+    `take 
+    `take-while 
+    `take-nth 
+    `drop 
+    `drop-while 
+    `replace 
+    `partition-by 
+    `partition-all 
+    `keep 
+    `keep-indexed 
+    `map-indexed 
+    `distinct 
+    `interpose 
+    `dedupe 
+    `random-sample})
+
+(def transducables (atom #{}))
+
+(defn reg-xf [& xf-args]
+  (swap! transducables into (mapv resolve xf-args)))
+
+(apply reg-xf default-transducables)
 
 (defn transducable? [form]
   (when (sequential? form)
-    (contains? transducables (first form))))
-
-(defn -comp
-  ([] identity)
-  ([f] f)
-  ([f g] (fn [x] (f (g x))))
-  ([f g h] (fn [x] (f (g (h x)))))
-  #?@(:clj  [([f1 f2 f3 f4] (fn [x] (-> x f4 f3 f2 f1)))
-             ([f1 f2 f3 f4 f5] (fn [x] (-> x f5 f4 f3 f2 f1)))
-             ([f1 f2 f3 f4 f5 f6] (fn [x] (-> x f6 f5 f4 f3 f2 f1)))
-             ([f1 f2 f3 f4 f5 f6 f7] (fn [x] (-> x f7 f6 f5 f4 f3 f2 f1)))
-             ([f1 f2 f3 f4 f5 f6 f7 f8] (fn [x] (-> x f8 f7 f6 f5 f4 f3 f2 f1)))
-             ([f1 f2 f3 f4 f5 f6 f7 f8 & fs]
-              (-comp
-               (apply -comp fs)
-               (fn [x] (-> x f8 f7 f6 f5 f4 f3 f2 f1))))]
-      :cljs [([f1 f2 f3 & fs]
-              (-comp
-               (apply -comp fs)
-               (fn [x] (-> x f3 f2 f1))))]))
+    (contains? @transducables (resolve (first form)))))
 
 (defn compose-transducer-group [xfs]
   (->> xfs
@@ -129,3 +118,43 @@
                              (list form x))]
           (recur threaded (next forms)))
         x))))
+
+(comment 
+
+  (require '[net.cgrand.xforms :as x])
+
+  (reg-xf `x/reduce)
+
+  (->> (range 10000000)
+       (map inc)
+       (filter odd?)
+       (mapcat #(do [% (dec %)]))
+       (partition-by #(= 0 (mod % 5)))
+       (map (partial apply +))
+      ;;  (mapv dec)
+       (map (partial + 10))
+       (map #(do {:temp-value %}))
+       (map :temp-value)
+       (filter even?)
+       (apply +)
+       time)
+
+  (x>> (range 10000000)
+       (map inc)
+       (filter odd?)
+       (mapcat #(do [% (dec %)]))
+       (partition-by #(= 0 (mod % 5)))
+       (map (partial apply +))
+      ;;  (mapv dec)
+       (map (partial + 10))
+       (map #(do {:temp-value %}))
+       (map :temp-value)
+       (filter even?)
+       (x/reduce +)
+       first
+       time)
+
+  (let [m {:a {:b [0 1 {:c :res}]}}]
+    (x> m :a :b 2 :c))
+  
+  :end)
