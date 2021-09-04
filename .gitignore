@@ -3,6 +3,7 @@
 /checkouts
 *.jar
 *.class
+/.cljs_node_repl
 /.calva/output-window/
 /.cpcache
 /.lein-*

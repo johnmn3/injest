@@ -3,36 +3,37 @@
 
 (def default-transducables
   #{`map
-    `cat 
-    `mapcat 
+    `cat
+    `mapcat
     `filter
-    `remove 
-    `take 
-    `take-while 
-    `take-nth 
-    `drop 
-    `drop-while 
-    `replace 
-    `partition-by 
-    `partition-all 
-    `keep 
-    `keep-indexed 
-    `map-indexed 
-    `distinct 
-    `interpose 
-    `dedupe 
+    `remove
+    `take
+    `take-while
+    `take-nth
+    `drop
+    `drop-while
+    `replace
+    `partition-by
+    `partition-all
+    `keep
+    `keep-indexed
+    `map-indexed
+    `distinct
+    `interpose
+    `dedupe
     `random-sample})
 
 (def transducables (atom #{}))
 
 (defn reg-xf [& xf-args]
-  (swap! transducables into (mapv resolve xf-args)))
+  (swap! transducables into (mapv symbol xf-args)))
 
-(apply reg-xf default-transducables)
+#?(:clj
+   (apply reg-xf default-transducables))
 
 (defn transducable? [form]
-  (when (sequential? form)
-    (contains? @transducables (resolve (first form)))))
+  true #_(when (sequential? form)
+           (contains? @transducables (symbol (first form)))))
 
 (defn compose-transducer-group [xfs]
   (->> xfs
@@ -44,41 +45,51 @@
     (sequence
      (compose-transducer-group xf-group)
      args)))
-
-(defmacro x>>
-  "Just like ->> but first composes consecutive transducing fns into a function
-   that sequences the last arguement through the transformers. Also, calls nth
-   for ints. So:
-   
-   (x>> [1 2 3] 
-        (map inc) 
-        (map (partial + 2)))
-   Becomes:
-   
-   ((xfn [[map inc] 
-          [map (partial + 2)]]) 
-    [1 2 3])"
-  [x & threads]
-  (let [forms (->> threads
-                   (partition-by transducable?)
-                   (mapv #(if-not (and (transducable? (first %))
-                                       (second %))
-                              %
-                              (list
+;; (symbol (var map))
+#?(:clj
+   (defmacro x>>
+     "Just like ->> but first composes consecutive transducing fns into a function
+     that sequences the last arguement through the transformers. Also, calls nth
+     for ints. So:
+     
+     (x>> [1 2 3] 
+          (map inc) 
+          (map (partial + 2)))
+     Becomes:
+     
+     ((xfn [[map inc] 
+            [map (partial + 2)]]) 
+      [1 2 3])"
+     [x & threads]
+     (let [forms (->> threads
+                      (partition-by #(and (sequential? %)
+                                          (let [f (first %)
+                                                _ (println :f f :type (type f))
+                                                v f ; #'f
+                                                _ (println :v v)
+                                                s (symbol v)]
+                                            (println :s s)
+                                            (contains? @transducables s)))) ;transducable?)
+                      (mapv #(if-not (and ;(transducable? (first %))
+                                      (contains? @transducables (symbol ;(resolve
+                                                                         (first (first %))))
+                                      (second %))
+                               %
                                (list
-                                `(xfn ~(mapv vec %))))))
-                   (apply concat))]
-    (loop [x x, forms forms]
-      (if forms
-        (let [form (first forms)
-              threaded (cond (seq? form)
-                             (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                             (int? form)
-                             (list `nth x form)
-                             :else
-                             (list form x))]
-          (recur threaded (next forms)))
-        x))))
+                                (list
+                                 `(xfn ~(mapv vec %))))))
+                      (apply concat))]
+       (loop [x x, forms forms]
+         (if forms
+           (let [form (first forms)
+                 threaded (cond (seq? form)
+                                (with-meta `(~(first form) ~@(next form) ~x) (meta form))
+                                (int? form)
+                                (list `nth x form)
+                                :else
+                                (list form x))]
+             (recur threaded (next forms)))
+           x)))))
 
 (defmacro x>
   "Just like -> but first composes consecutive transducing fns into a function
@@ -119,11 +130,11 @@
           (recur threaded (next forms)))
         x))))
 
-(comment 
+(comment
 
-  (require '[net.cgrand.xforms :as x])
+  ;; (require '[net.cgrand.xforms :as x])
 
-  (reg-xf `x/reduce)
+  ;; (reg-xf `x/reduce)
 
   (->> (range 10000000)
        (map inc)
@@ -150,11 +161,12 @@
        (map #(do {:temp-value %}))
        (map :temp-value)
        (filter even?)
-       (x/reduce +)
-       first
+      ;;  (x/reduce +)
+      ;;  first
+       (apply +)
        time)
 
   (let [m {:a {:b [0 1 {:c :res}]}}]
     (x> m :a :b 2 :c))
-  
+
   :end)
