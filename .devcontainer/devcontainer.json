@@ -21,14 +21,20 @@
 	
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"vscjava.vscode-java-pack"
+		"vscjava.vscode-java-pack",
+		"betterthantomorrow.calva",
+		"eamodio.gitlens",
+		"ms-vscode-remote.remote-containers",
+		"github.codespaces"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "java -version",
+	"postCreateCommand": "curl -O https://download.clojure.org/install/linux-install-1.10.3.967.sh
+	chmod +x linux-install-1.10.3.967.sh
+	sudo ./linux-install-1.10.3.967.sh",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"

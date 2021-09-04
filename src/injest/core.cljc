@@ -72,7 +72,7 @@
                                             (contains? @transducables s)))) ;transducable?)
                       (mapv #(if-not (and ;(transducable? (first %))
                                       (contains? @transducables (symbol ;(resolve
-                                                                         (first (first %))))
+                                                                 (first (first %))))
                                       (second %))
                                %
                                (list
