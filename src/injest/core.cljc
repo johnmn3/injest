@@ -1,39 +1,60 @@
 (ns injest.core
-  #?(:cljs (:require-macros [injest.core])))
+  (:require [cljs.analyzer.api :as api])
+  #?(;:clj  (:require [cljs.analyzer.api :as api])
+     :cljs (:require-macros [injest.core])))
 
-(def default-transducables
-  #{`map
-    `cat
-    `mapcat
-    `filter
-    `remove
-    `take
-    `take-while
-    `take-nth
-    `drop
-    `drop-while
-    `replace
-    `partition-by
-    `partition-all
-    `keep
-    `keep-indexed
-    `map-indexed
-    `distinct
-    `interpose
-    `dedupe
-    `random-sample})
+;clj -Sdeps '{:deps {johnmn3/perc {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.1" :git/sha "4564688"}}}'
+
+(def def-regs
+  #{'cljs.core/mapcat
+    'cljs.core/keep
+    'cljs.core/filter
+    'cljs.core/take-while
+    'cljs.core/drop-while
+    'cljs.core/keep-indexed
+    'cljs.core/take
+    'cljs.core/partition-all
+    'cljs.core/distinct
+    'cljs.core/dedupe
+    'cljs.core/take-nth
+    ;; #_ ; <- uncomment here to try to add map from cljs
+    'cljs.core/map
+    'cljs.core/partition-by
+    'cljs.core/remove
+    'cljs.core/cat
+    'cljs.core/replace
+    'cljs.core/random-sample
+    'cljs.core/interpose
+    'cljs.core/map-indexed
+    'cljs.core/drop
+
+    'clojure.core/take-nth
+    'clojure.core/distinct
+    'clojure.core/keep-indexed
+    'clojure.core/random-sample
+    'clojure.core/map-indexed
+    #_ ; <- map is being added below, via registration
+    'clojure.core/map
+    'clojure.core/replace
+    'clojure.core/drop
+    'clojure.core/remove
+    'clojure.core/cat
+    'clojure.core/partition-all
+    'clojure.core/interpose
+    'clojure.core/mapcat
+    'clojure.core/dedupe
+    'clojure.core/drop-while
+    'clojure.core/partition-by
+    'clojure.core/take-while
+    'clojure.core/take
+    'clojure.core/keep
+    'clojure.core/filter})
 
 (def transducables (atom #{}))
 
-(defn reg-xf [& xf-args]
-  (swap! transducables into (mapv symbol xf-args)))
-
-#?(:clj
-   (apply reg-xf default-transducables))
-
 (defn transducable? [form]
-  true #_(when (sequential? form)
-           (contains? @transducables (symbol (first form)))))
+  (when (sequential? form)
+    (->> form first (contains? @transducables))))
 
 (defn compose-transducer-group [xfs]
   (->> xfs
@@ -45,10 +66,51 @@
     (sequence
      (compose-transducer-group xf-group)
      args)))
-;; (symbol (var map))
-#?(:clj
-   (defmacro x>>
-     "Just like ->> but first composes consecutive transducing fns into a function
+
+(def safe-resolve
+  #?(:clj resolve :cljs identity))
+
+(defn qualify-sym [x env]
+  (if-not env
+    `(quote
+      ~(symbol (safe-resolve x)))
+    `(symbol
+      (quote
+       ~(some-> x
+                ((partial cljs.analyzer.api/resolve env))
+                :name
+                symbol)))))
+
+(defn qualify-form [x env]
+  (if-not env
+    (list (symbol (safe-resolve x)))
+    (list
+     (some-> x
+             ((partial cljs.analyzer.api/resolve env))
+             :name
+             str
+             symbol))))
+
+(defmacro reg-xf! [& xfs]
+  `(swap! transducables into ~(->> xfs (mapv #(qualify-sym % &env)))))
+
+(defn regxf! [& xfs]
+  (swap! transducables into xfs))
+
+(apply regxf! def-regs)
+
+(regxf! 'clojure.core/map) ; or (reg-xf! map) ; this works in clj but not cljs
+
+(defn- qualify-thread [env thread]
+  (mapv
+   (fn w [x]
+     (if (and (list? x) (symbol? (first x)))
+       (-> x first (qualify-form env) (concat (rest x)))
+       x))
+   thread))
+
+(defmacro x>>
+  "Just like ->> but first composes consecutive transducing fns into a function
      that sequences the last arguement through the transformers. Also, calls nth
      for ints. So:
      
@@ -60,39 +122,29 @@
      ((xfn [[map inc] 
             [map (partial + 2)]]) 
       [1 2 3])"
-     [x & threads]
-     (let [forms (->> threads
-                      (partition-by #(and (sequential? %)
-                                          (let [f (first %)
-                                                _ (println :f f :type (type f))
-                                                v f ; #'f
-                                                _ (println :v v)
-                                                s (symbol v)]
-                                            (println :s s)
-                                            (contains? @transducables s)))) ;transducable?)
-                      (mapv #(if-not (and ;(transducable? (first %))
-                                      (contains? @transducables (symbol ;(resolve
-                                                                 (first (first %))))
-                                      (second %))
-                               %
-                               (list
-                                (list
-                                 `(xfn ~(mapv vec %))))))
-                      (apply concat))]
-       (loop [x x, forms forms]
-         (if forms
-           (let [form (first forms)
-                 threaded (cond (seq? form)
-                                (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                                (int? form)
-                                (list `nth x form)
-                                :else
-                                (list form x))]
-             (recur threaded (next forms)))
-           x)))))
+  [x & threads]
+  (let [forms (->> threads
+                   (qualify-thread &env)
+                   (partition-by #(transducable? %))
+                   (mapv #(if-not (and (transducable? (first %))
+                                       (second %))
+                            %
+                            (list (list `(xfn ~(mapv vec %))))))
+                   (apply concat))]
+    (loop [x x, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (cond (seq? form)
+                             (with-meta `(~(first form) ~@(next form) ~x) (meta form))
+                             (int? form)
+                             (list `nth x form)
+                             :else
+                             (list form x))]
+          (recur threaded (next forms)))
+        x))))
 
 (defmacro x>
-  "Just like -> but first composes consecutive transducing fns into a function
+    "Just like -> but first composes consecutive transducing fns into a function
    that sequences the second arguement through the transformers. Also, calls nth
    for ints. So:
    
@@ -108,27 +160,25 @@
      (conj [1 2 3] 
            4)) 
     2)"
-  [x & threads]
-  (let [forms (->> threads
-                   (partition-by transducable?)
+    [x & threads]
+    (let [forms (->> threads
+                   (partition-by #(transducable? %))
                    (mapv #(if-not (and (transducable? (first %))
                                        (second %))
                             %
-                            (list
-                             (list
-                              `(xfn ~(mapv vec %))))))
+                            (list (list `(xfn ~(mapv vec %))))))
                    (apply concat))]
-    (loop [x x, forms forms]
-      (if forms
-        (let [form (first forms)
-              threaded (cond (seq? form)
-                             (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                             (int? form)
-                             (list `nth x form)
-                             :else
-                             (list form x))]
-          (recur threaded (next forms)))
-        x))))
+      (loop [x x, forms forms]
+        (if forms
+          (let [form (first forms)
+                threaded (cond (seq? form)
+                               (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                               (int? form)
+                               (list `nth x form)
+                               :else
+                               (list form x))]
+            (recur threaded (next forms)))
+          x))))
 
 (comment
 
