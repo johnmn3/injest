@@ -6,7 +6,7 @@ Place the following in the `:deps` map of your `deps.edn` file:
 ```
   ...
   johnmn3/injest {:git/url "https://github.com/johnmn3/injest"
-                  :sha ""}
+                  :sha "36700c553447b31577c82dd94531cbd8e4afdad9"}
   ...
 ```
 Then require the injest macros in your project:
