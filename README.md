@@ -9,7 +9,11 @@ Place the following in the `:deps` map of your `deps.edn` file:
                   :sha "36700c553447b31577c82dd94531cbd8e4afdad9"}
   ...
 ```
-Then require the injest macros in your project:
+To try it in a repl right now:
+```clojure
+clj -Sdeps '{:deps {johnmn3/perc {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.1" :git/sha "4564688"}}}'
+```
+Then require the `injest` macros in your project:
 ```clojure
 (require '[injest.core :as injest :refer [x> x>>]])
 ```
@@ -84,7 +88,7 @@ This feature is very experimental, but there is a `reg-xf` function that can tak
 ```clojure
 (require '[net.cgrand.xforms :as x])
 
-(injest/reg-xf `x/reduce)
+(injest/reg-xf! x/reduce)
 
 (x>> (range 10000000)
      (map inc)
@@ -105,6 +109,10 @@ Even better!
 ```clojure
 "Elapsed time: 2889.771067 msecs"
 5000054999994
+```
+Still working on ClojureScript support. For now, you can add another `*.clj` namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
+```clojure
+(injest/regxf! 'net.cgrand.xforms/reduce)
 ```
 ## Future work
 A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).

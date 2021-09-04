@@ -1,9 +1,6 @@
 (ns injest.core
   (:require [cljs.analyzer.api :as api])
-  #?(;:clj  (:require [cljs.analyzer.api :as api])
-     :cljs (:require-macros [injest.core])))
-
-;clj -Sdeps '{:deps {johnmn3/perc {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.1" :git/sha "4564688"}}}'
+  #?(:cljs (:require-macros [injest.core])))
 
 (def def-regs
   #{'cljs.core/mapcat
