@@ -3,16 +3,21 @@
 `injest`'s thread macros scan forms for contiguous groups of transducers and comps them together into a function that sequences the values flowing in the thread through the transducers.
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
-```
-  ...
-  johnmn3/injest {:git/url "https://github.com/johnmn3/injest"
-                  :sha "36700c553447b31577c82dd94531cbd8e4afdad9"}
-  ...
-```
-To try it in a repl right now:
 ```clojure
-clj -Sdeps '{:deps {johnmn3/perc {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.1" :git/sha "4564688"}}}'
+  ...
+  johnmn3/injest {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.2" :git/sha "eada638"}
+  ...
 ```
+To try it in a repl right now, drop this in your shell:
+```clojure
+clj -Sdeps \
+    '{:deps 
+      {johnmn3/injest 
+       {:git/url "https://github.com/johnmn3/injest" 
+        :git/tag "v0.1-alpha.2" 
+        :git/sha "eada638"}}}'
+```
+
 Then require the `injest` macros in your project:
 ```clojure
 (require '[injest.core :as injest :refer [x> x>>]])
