@@ -89,7 +89,7 @@ So we lost some speed due to the boxing, but we’re still doing a worthy bit be
 Note that `x>` is different than `->` in that if a transducer is passed in, it appears as if it is a thread-last on that transducer form.
 
 ## Extending `injest`
-This feature is very experimental, but there is a `reg-xf` function that can take one or more backticked symbols. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `injest/reg-xf` in one of your namespaces.
+This feature is very experimental, but there is a `reg-xf!` macro that can take one or more transducers. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your namespaces.
 ```clojure
 (require '[net.cgrand.xforms :as x])
 
