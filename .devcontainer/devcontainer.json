@@ -25,7 +25,8 @@
 		"betterthantomorrow.calva",
 		"eamodio.gitlens",
 		"ms-vscode-remote.remote-containers",
-		"github.codespaces"
+		"github.codespaces",
+		"shaunlebron.vscode-parinfer"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
