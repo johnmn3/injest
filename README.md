@@ -88,8 +88,20 @@ So we lost some speed due to the boxing, but we’re still doing a worthy bit be
 
 Note that `x>` is different than `->` in that if a transducer is passed in, it appears as if it is a thread-last on that transducer form.
 
+## Clojurescript 
+In Clojurescript, the performance gains are even more pronounced. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
+```clojure
+"Elapsed time: 3523.186678 msecs"
+50005499994
+```
+While `x>>` version produces:
+```clojure
+"Elapsed time: 574.145888 msecs"
+50005499994
+```
+That's a _six times_ speedup!
 ## Extending `injest`
-This feature is very experimental, but there is a `reg-xf!` macro that can take one or more transducers. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your namespaces.
+This feature is very experimental, but there is a `reg-xf!` macro that can take one or more transducers. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your namespaces - preferably in an initially loaded one.
 ```clojure
 (require '[net.cgrand.xforms :as x])
 
@@ -115,10 +127,11 @@ Even better!
 "Elapsed time: 2889.771067 msecs"
 5000054999994
 ```
-Still working on ClojureScript support. For now, you can add another `*.clj` namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
+Still working on ClojureScript support. For now, you can add another clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
 ```clojure
 (injest/regxf! 'net.cgrand.xforms/reduce)
 ```
+Assuming the `net.cgrand.xforms` library exports the same namespaces and names for Clojure and Clojurescript, you can probably just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces. If anyone notices a way to let registratrions happen from ClojureScript namespaces, please drop a PR/patch.
 ## Future work
 A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
 # Extras
