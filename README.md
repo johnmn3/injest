@@ -127,24 +127,24 @@ Even better!
 "Elapsed time: 2889.771067 msecs"
 5000054999994
 ```
-Still working on ClojureScript support. For now, you can add another clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
+Still working on ClojureScript support. For now, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
 ```clojure
 (injest/regxf! 'net.cgrand.xforms/reduce)
 ```
-Assuming the `net.cgrand.xforms` library exports the same namespaces and names for Clojure and Clojurescript, you can probably just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces. If anyone notices a way to let registratrions happen from ClojureScript namespaces, please drop a PR/patch.
-## Future work
-A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
+Assuming the `net.cgrand.xforms` library exports the same namespaces and names for Clojure and Clojurescript, you can probably just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces. If anyone notices a way to let registrations happen from ClojureScript namespaces, please drop a PR/patch.
 # Extras
 ## As a replacement for `get-in`
-With `x>` and `x>>`, a naked integer in a thread becomes an `nth` on the value threading through, so you can use them as replacements for `get-in` for most cases involving access in heterogeneous nestings:
+With `x>` and `x>>`, naked integers and strings in a thread become a `get` on the value threading through, so you can use them as replacements for `get-in` for most cases involving access in heterogeneous nestings:
 ```clojure
-(let [m {:a {:b [0 1 {:c :res}]}}]
-  (x> m :a :b 2 :c)) ;=> :res
+(let [m {1 {"b" [0 1 {:c :res}]}}]
+  (x> m 1 "b" 2 :c)) ;=> :res
 ```
+# Future work
+A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
 # Caveats
 It should be noted as well:
 
-1. Because transducers have different laziness semantics, you can't be as liberal with your consumption, so test on live data befoe using this as a drop-in replacement for the default thread macros.
+1. Because transducers have different laziness semantics, you can't be as liberal with your consumption, so test on live data before using this as a drop-in replacement for the default thread macros.
 
 2. Some stateful transducers may be optimized for single-threaded performance and may not produce expected results in some multi-threaded scenarios… not sure if that applies to these macros, as some context outside the thread would likely be orchestrating mutli-threading, which I don’t think would usually reach into those transducer’s internal state independently… But proceed with caution around super fancy, stateful, parallel transducers for now.
 

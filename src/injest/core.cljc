@@ -133,8 +133,8 @@
         (let [form (first forms)
               threaded (cond (seq? form)
                              (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                             (int? form)
-                             (list `nth x form)
+                             (or (string? form) (int? form))
+                             (list `get x form)
                              :else
                              (list form x))]
           (recur threaded (next forms)))
@@ -170,8 +170,8 @@
           (let [form (first forms)
                 threaded (cond (seq? form)
                                (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                               (int? form)
-                               (list `nth x form)
+                               (or (string? form) (int? form))
+                               (list `get x form)
                                :else
                                (list form x))]
             (recur threaded (next forms)))
@@ -213,7 +213,7 @@
        (apply +)
        time)
 
-  (let [m {:a {:b [0 1 {:c :res}]}}]
-    (x> m :a :b 2 :c))
+  (let [m {1 {"b" [0 1 {:c :res}]}}]
+    (x> m 1 "b" 2 :c))
 
   :end)
