@@ -5,7 +5,7 @@
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  johnmn3/injest {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.2" :git/sha "eada638"}
+  johnmn3/injest {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.3" :git/sha "71a03de"}
   ...
 ```
 To try it in a repl right now, drop this in your shell:
@@ -14,8 +14,8 @@ clj -Sdeps \
     '{:deps 
       {johnmn3/injest 
        {:git/url "https://github.com/johnmn3/injest" 
-        :git/tag "v0.1-alpha.2" 
-        :git/sha "eada638"}}}'
+        :git/tag "v0.1-alpha.3" 
+        :git/sha "71a03de"}}}'
 ```
 Then require the `injest` macros in your project:
 ```clojure
