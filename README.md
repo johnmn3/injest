@@ -12,9 +12,8 @@ To try it in a repl right now, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {johnmn3/injest 
-       {:git/url "https://github.com/johnmn3/injest" 
-        :git/tag "v0.1-alpha.3" 
+      {io.github.johnmn3/injest 
+       {:git/tag "v0.1-alpha.3" 
         :git/sha "71a03de"}}}'
 ```
 Then require the `injest` macros in your project:
