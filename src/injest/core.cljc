@@ -96,9 +96,9 @@
 
 (apply regxf! def-regs)
 
-(regxf! 'clojure.core/map) ; or (reg-xf! map) ; this works in clj but not cljs
+(regxf! 'clojure.core/map) ; or (reg-xf! map) ; Must be called from Clojure
 
-(defn- qualify-thread [env thread]
+(defn qualify-thread [env thread]
   (mapv
    (fn w [x]
      (if (and (list? x) (symbol? (first x)))
@@ -108,16 +108,15 @@
 
 (defmacro x>>
   "Just like ->> but first composes consecutive transducing fns into a function
-     that sequences the last arguement through the transformers. Also, calls nth
-     for ints. So:
-     
+     that sequences the last arguement through the transformers.
+   
+   So:
      (x>> [1 2 3] 
           (map inc) 
           (map (partial + 2)))
-     Becomes:
-     
-     ((xfn [[map inc] 
-            [map (partial + 2)]]) 
+
+   Becomes:
+     ((xfn [[map inc] [map (partial + 2)]]) 
       [1 2 3])"
   [x & threads]
   (let [forms (->> threads
@@ -133,49 +132,45 @@
         (let [form (first forms)
               threaded (cond (seq? form)
                              (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                             (or (string? form) (int? form))
-                             (list `get x form)
                              :else
                              (list form x))]
           (recur threaded (next forms)))
         x))))
 
 (defmacro x>
-    "Just like -> but first composes consecutive transducing fns into a function
-   that sequences the second arguement through the transformers. Also, calls nth
-   for ints. So:
-   
+  "Just like -> but first composes consecutive transducing fns into a function
+   that sequences the second arguement through the transformers.
+
+   So:
    (x> [1 2 3]
        (conj 4)
        (map inc)
        (map (partial + 2))
        2)
-   Becomes like:
-   
+
+   Becomes:
    (nth
     ((xfn [[map inc] [map (partial + 2)]]) 
      (conj [1 2 3] 
            4)) 
     2)"
-    [x & threads]
-    (let [forms (->> threads
+  [x & threads]
+  (let [forms (->> threads
                    (partition-by #(transducable? %))
                    (mapv #(if-not (and (transducable? (first %))
                                        (second %))
                             %
                             (list (list `(xfn ~(mapv vec %))))))
                    (apply concat))]
-      (loop [x x, forms forms]
-        (if forms
-          (let [form (first forms)
-                threaded (cond (seq? form)
-                               (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                               (or (string? form) (int? form))
-                               (list `get x form)
-                               :else
-                               (list form x))]
-            (recur threaded (next forms)))
-          x))))
+    (loop [x x, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (cond (seq? form)
+                             (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                             :else
+                             (list form x))]
+          (recur threaded (next forms)))
+        x))))
 
 (comment
 
@@ -212,8 +207,5 @@
       ;;  first
        (apply +)
        time)
-
-  (let [m {1 {"b" [0 1 {:c :res}]}}]
-    (x> m 1 "b" 2 :c))
 
   :end)

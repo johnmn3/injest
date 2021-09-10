@@ -17,11 +17,11 @@ clj -Sdeps \
         :git/tag "v0.1-alpha.2" 
         :git/sha "eada638"}}}'
 ```
-
 Then require the `injest` macros in your project:
 ```clojure
 (require '[injest.core :as injest :refer [x> x>>]])
 ```
+> Note: For even _more_ modern conveniences, I actually recommend requiring in the `injest.path` namespace instead of `injest.core` namespace, described [in more details below](#extras). However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
 # Details
 Why? Well:
 
@@ -134,10 +134,22 @@ Still working on ClojureScript support. For now, you can add another Clojure (`*
 Assuming the `net.cgrand.xforms` library exports the same namespaces and names for Clojure and Clojurescript, you can probably just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces. If anyone notices a way to let registrations happen from ClojureScript namespaces, please drop a PR/patch.
 # Extras
 ## As a replacement for `get-in`
-With `x>` and `x>>`, naked integers and strings in a thread become a `get` on the value threading through, so you can use them as replacements for `get-in` for most cases involving access in heterogeneous nestings:
+`injest` comes with extra features that allow for more intuitive path navigation, like you're used to with the `(-> m :a :b :c)` idiom. Simply require instead from the `injest.path` namespace, like so:
+```clojure
+(ns ...
+  (:refer-clojure :exclude [-> ->>])
+  (:require [injest.path :refer [x> x>> -> ->>]]
+   ...
+```
+With `x>` and `x>>`, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences and replace `get-in` for most cases involving access in heterogeneous nestings:
 ```clojure
 (let [m {1 {"b" [0 1 {:c :res}]}}]
-  (x> m 1 "b" 2 :c)) ;=> :res
+  (x> m 1 "b" 2 :c name)) ;=> "res"
+```
+If you find yourself wanting to migrate a thread away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>` or `x>>` macro with the corresponding `->` or `->>` macro we required in above. Path navigating will continue to work:
+```clojure
+(let [m {1 {"b" [0 1 {:c :res}]}}]
+  (->> m 1 "b" 2 :c name)) ;=> "res"
 ```
 # Future work
 A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
