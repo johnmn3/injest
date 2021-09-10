@@ -23,6 +23,11 @@
 
   :end)
 
+(def regxf! c/regxf!)
+
+(defmacro reg-xf! [& args]
+  `(c/reg-xf! ~@args))
+
 (defmacro x>>
   "Just like ->> but first composes consecutive transducing fns into a function
    that sequences the last arguement through the transformers.
@@ -224,8 +229,8 @@
   (let [m {1 {"b" [0 1 {:c :res}]}}]
     (-> m 1 "b" 2 :c name)) ;=> "res"
 
-  (let [m {1 {"b" [0 1 {:c :res}]}}]
-    (->> m 1 "b" 2 :c name)) ;=> "res"
+  (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
+    (->> m 1 2 "b" 2 :c name)) ;=> "res"
   
   :end)
   

@@ -1,11 +1,14 @@
 # injest
 ## `x>` &amp; `x>>`: Auto-transducifying thread macros
+
+### _"It's like training wheels for transducers" :)_
+
 `injest`'s thread macros scan forms for contiguous groups of transducers and comps them together into a function that sequences the values flowing in the thread through the transducers.
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  johnmn3/injest {:git/url "https://github.com/johnmn3/injest" :git/tag "v0.1-alpha.3" :git/sha "71a03de"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.3" :git/sha "71a03de"}
   ...
 ```
 To try it in a repl right now, drop this in your shell:
@@ -18,9 +21,18 @@ clj -Sdeps \
 ```
 Then require the `injest` macros in your project:
 ```clojure
-(require '[injest.core :as injest :refer [x> x>>]])
+(ns ...
+  (:require [injest.core :as injest :refer [x> x>>]]
+   ...
 ```
-> Note: For even _more_ modern conveniences, I actually recommend requiring in the `injest.path` namespace instead of `injest.core` namespace, described [in more details below](#extras). However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
+For even _more_ modern conveniences, I recommend requiring in the `injest.path` namespace instead of the `injest.core` namespace, described [in more details below](#extras).
+```clojure
+(ns ...
+  (:refer-clojure :exclude [-> ->>])
+  (:require [injest.path :as injest :refer [x> x>> -> ->>]]
+   ...
+```
+However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
 # Details
 Why? Well:
 
@@ -126,11 +138,11 @@ Even better!
 "Elapsed time: 2889.771067 msecs"
 5000054999994
 ```
-Still working on ClojureScript support. For now, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
+In Clojurescript, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
 ```clojure
 (injest/regxf! 'net.cgrand.xforms/reduce)
 ```
-Assuming the `net.cgrand.xforms` library exports the same namespaces and names for Clojure and Clojurescript, you can probably just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces. If anyone notices a way to let registrations happen from ClojureScript namespaces, please drop a PR/patch.
+Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces.
 # Extras
 ## As a replacement for `get-in`
 `injest` comes with extra features that allow for more intuitive path navigation, like you're used to with the `(-> m :a :b :c)` idiom. Simply require instead from the `injest.path` namespace, like so:
@@ -140,15 +152,17 @@ Assuming the `net.cgrand.xforms` library exports the same namespaces and names f
   (:require [injest.path :refer [x> x>> -> ->>]]
    ...
 ```
-With `x>` and `x>>`, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences and replace `get-in` for most cases involving access in heterogeneous nestings:
+With `injest.path` macros, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences and replace `get-in` for most cases involving access in heterogeneous nestings:
 ```clojure
-(let [m {1 {"b" [0 1 {:c :res}]}}]
-  (x> m 1 "b" 2 :c name)) ;=> "res"
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
+  (x>> m 1 2 "b" 2 :c name)) ;=> "res"
 ```
+Here, we're looking up `1` in the map, then getting the third element of the sequence returned, then looking up `"b"` in the returned map, then getting the third element of the returned vector, then looking up `:c` in the returned map, and then finally calling name on the returned keyword value.
+
 If you find yourself wanting to migrate a thread away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>` or `x>>` macro with the corresponding `->` or `->>` macro we required in above. Path navigating will continue to work:
 ```clojure
-(let [m {1 {"b" [0 1 {:c :res}]}}]
-  (->> m 1 "b" 2 :c name)) ;=> "res"
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
+  (->> m 1 2 "b" 2 :c name)) ;=> "res"
 ```
 # Future work
 A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
