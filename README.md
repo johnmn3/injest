@@ -28,11 +28,10 @@ Then require the `injest` macros in your project:
 For even _more_ modern conveniences, I recommend requiring in the `injest.path` namespace instead of the `injest.core` namespace, described [in more details below](#extras).
 ```clojure
 (ns ...
-  (:refer-clojure :exclude [-> ->>])
-  (:require [injest.path :as injest :refer [x> x>> -> ->>]]
+  (:require [injest.path :as injest :refer [x> x>> +> +>>]]
    ...
 ```
-However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
+The `injest.path` namespace provides `x>` and `x>>` with the additional _'path thread'_ semantics of `+>` and `+>>`, described below. However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
 # Details
 Why? Well:
 
@@ -144,26 +143,34 @@ In Clojurescript, you can add another Clojure (`*.clj`) namespace to your projec
 ```
 Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to `x>>` threads in both your Clojure and Clojurescript namespaces.
 # Extras
-## As a replacement for `get-in`
-`injest` comes with extra features that allow for more intuitive path navigation, like you're used to with the `(-> m :a :b :c)` idiom. Simply require instead from the `injest.path` namespace, like so:
+`injest` comes with extra features that allow for more intuitive path navigation, like you're used to with the `(-> m :a :b :c)` idiom. We refer to these as _path threads_. Simply require instead from the `injest.path` namespace, like so:
 ```clojure
 (ns ...
-  (:refer-clojure :exclude [-> ->>])
-  (:require [injest.path :refer [x> x>> -> ->>]]
+  (:require [injest.path :refer [x> x>> +> +>>]]
    ...
 ```
-With `injest.path` macros, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences and replace `get-in` for most cases involving access in heterogeneous nestings:
+## As a replacement for `get-in`
+In path threads, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences and replace `get-in` for most cases involving access in heterogeneous nestings:
 ```clojure
 (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
   (x>> m 1 2 "b" 2 :c name)) ;=> "res"
 ```
 Here, we're looking up `1` in the map, then getting the third element of the sequence returned, then looking up `"b"` in the returned map, then getting the third element of the returned vector, then looking up `:c` in the returned map, and then finally calling name on the returned keyword value.
 
-If you find yourself wanting to migrate a thread away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>` or `x>>` macro with the corresponding `->` or `->>` macro we required in above. Path navigating will continue to work:
+> Note that we are not introducing any new powers of abstraction here, as the new semantics can only apply to the top level tokens of the thread form and do not recurse into the form. We're simply reclaiming for usage some unusable tokens in the already existing thread abstractions. So we don't have to worry about users creating unreadable abstractions with this addition. Also note, this feature does _not prevent_ the creation of any new abstractions that could have been created before this feature's addition, except for the possible callability of strings, numbers, booleans and nils, which are abstractions we'd rather not implement or maintain anyway (though you could still attempt that outside these macros).
+## Lambda wrapping
+If you'd like to thread values through anonymous functions, like `#(- 10 % 1)` or `(fn [x] (- 10 x 1))`, without having to wrap them in an extra enclosing set of parenthesis, you can do that with path threads too:
+```clojure
+(x> 10 range rest 2 #(- 10 % 1)) ;=> 6
+```
+This has the added benefit of conveying to the reader that the author intends for the anonymous function to only take one parameter. In the classical thread syntax, the reader would have to scan all the way to the end of `(#(... ` in order to know if an extra parameter is being passed in. It also prevents people from creating unmaintainable abstractions involving the threading of values into a literal lambda definition, which I would rather not have to maintain.
+## Backwards compatability
+`+>` and `+>>` have the same laziness semantics as `->` and `+>>`. So, if you find yourself wanting to migrate a _path thread_ away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>` or `x>>` macro with the corresponding `+>` or `+>>` macro we required in above. Path navigating will continue to work:
 ```clojure
 (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
-  (->> m 1 2 "b" 2 :c name)) ;=> "res"
+  (+>> m 1 2 "b" 2 :c name)) ;=> "res"
 ```
+You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
 # Future work
 A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
 # Caveats
@@ -174,6 +181,12 @@ It should be noted as well:
 2. Some stateful transducers may be optimized for single-threaded performance and may not produce expected results in some multi-threaded scenarios… not sure if that applies to these macros, as some context outside the thread would likely be orchestrating mutli-threading, which I don’t think would usually reach into those transducer’s internal state independently… But proceed with caution around super fancy, stateful, parallel transducers for now.
 
 If you have any problems, feature requests or ideas, feel free to drop a note in the issues or discuss it in the clojureverse [thread](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122/9).
+# References
+Some other perfomance-related investigations you may be interested in:
+* [clj-fast](https://github.com/bsless/clj-fast) - optimized core functions
+* [structural](https://github.com/joinr/structural) - efficient destructuring
+
+Inspiration for the lambda wrapping came from this ask.clojure request: [should-the-threading-macros-handle-lambdas](https://ask.clojure.org/index.php/9023/should-the-threading-macros-handle-lambdas)
 # License
 
 Currently, the source draws heavily from the default `clojure.core`'s `->` and `->>` macros, so we're using the same license here.
