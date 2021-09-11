@@ -8,7 +8,7 @@
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.3" :git/sha "71a03de"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.4" :git/sha "ddf8a6e"}
   ...
 ```
 To try it in a repl right now, drop this in your shell:
@@ -16,8 +16,8 @@ To try it in a repl right now, drop this in your shell:
 clj -Sdeps \
     '{:deps 
       {io.github.johnmn3/injest 
-       {:git/tag "v0.1-alpha.3" 
-        :git/sha "71a03de"}}}'
+       {:git/tag "v0.1-alpha.4" 
+        :git/sha "ddf8a6e"}}}'
 ```
 Then require the `injest` macros in your project:
 ```clojure
