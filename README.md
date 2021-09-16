@@ -7,14 +7,14 @@ This library makes it easier to use Clojure's most powerful features.
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.5" :git/sha "41e255e"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.6" :git/sha "0a5f2df"}
   ...
 ```
 To try it in a repl right now, with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.5" :git/sha "41e255e"}
+      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.6" :git/sha "0a5f2df"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -272,7 +272,7 @@ This has the added benefit of conveying to the reader that the author intends fo
 ```
 You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
 # Future work
-There are other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
+With regards to the parallel transducing threads, I'd like to explore `folder`. There are other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
 # Caveats
 It should be noted as well:
 
@@ -283,6 +283,7 @@ It should be noted as well:
 If you have any problems, feature requests or ideas, feel free to drop a note in the issues or discuss it in the clojureverse [thread](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122/9).
 # References
 Some other perfomance-related investigations you may be interested in:
+* [cgrand/xforms](https://github.com/cgrand/xforms) - More transducers and reducing functions for Clojure(script)!
 * [clj-fast](https://github.com/bsless/clj-fast) - optimized core functions
 * [structural](https://github.com/joinr/structural) - efficient destructuring
 
