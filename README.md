@@ -1,9 +1,8 @@
-# injest
-## `x>` &amp; `x>>`: Auto-transducifying thread macros
+# `+>` - `+>>` - `x>` - `x>>` - `=>` - `=>>`
+## `injest`: Path-navigating, auto-transducifying, parallelizing thread macros
+This library makes it easier to use Clojure's most powerful features.
 
-### _"It's like training wheels for transducers" :)_
-
-`injest`'s thread macros scan forms for contiguous groups of transducers and comps them together into a function that sequences the values flowing in the thread through the transducers.
+`injest`'s thread macros scan forms for contiguous groups of transducers and comps them together into a function that sequences or parallel-pipeline's the values flowing in the thread through the transducers.
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
@@ -22,16 +21,16 @@ clj -Sdeps \
 Then require the `injest` macros in your project:
 ```clojure
 (ns ...
-  (:require [injest.core :as injest :refer [x> x>>]]
+  (:require [injest.core :as injest :refer [x> x>> => =>>]]
    ...
 ```
 For even _more_ modern conveniences, I recommend requiring in the `injest.path` namespace instead of the `injest.core` namespace, described [in more details below](#extras).
 ```clojure
 (ns ...
-  (:require [injest.path :as injest :refer [x> x>> +> +>>]]
+  (:require [injest.path :as injest :refer [x> x>> +> +>> => =>>]]
    ...
 ```
-The `injest.path` namespace provides `x>` and `x>>` with the additional _'path thread'_ semantics of `+>` and `+>>`, described below. However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
+The `injest.path` namespace provides `x>`, `x>>`, `=>` and `=>>` with the additional _'path thread'_ semantics of `+>` and `+>>`, described below. However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics. As such, Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
 # Details
 Why? Well:
 
@@ -94,10 +93,109 @@ But now, for `x>>`:
 "Elapsed time: 3706.701192 msecs"
 44999977000016
 ```
-So we lost some speed due to the boxing, but we’re still doing a worthy bit better than the default thread macro. Point is, if you want to maximize performance, try to align your transducers contiguously.'
+So we lost some speed due to the boxing, but we’re still doing a worthy bit better than the default thread macro. Point is, if you want to maximize performance, try to align your transducers contiguously.
 
 Note that `x>` is different than `->` in that if a transducer is passed in, it appears as if it is a thread-last on that transducer form.
 
+## Parallel `=>` & `=>>`
+`injest` also provides parallel versions of `x>` and `x>>`. Instead of using `sequence` on the thread, `=>` and `=>>` leverage `core.async`'s parallel `pipeline` in order to execute the transducers over a pool of threads equal to `(+ 2 your-number-of-cores)`. It doesn't work well for small data payloads though, so for demonstration purposes let's augment our above threads:
+```clojure
+(require '[clojure.edn :as edn])
+
+(defn work-1000 [work-fn]
+  (range (last (repeatedly 1000 work-fn))))
+
+(defn ->>work [input]
+  (work-1000
+   (fn []
+     (->> input
+          (map inc)
+          (filter odd?)
+          (mapcat #(do [% (dec %)]))
+          (partition-by #(= 0 (mod % 5)))
+          (map (partial apply +))
+          (map (partial + 10))
+          (map #(do {:temp-value %}))
+          (map :temp-value)
+          (filter even?)
+          (apply +)
+          str
+          (take 3)
+          (apply str)
+          edn/read-string))))  
+
+(defn x>>work [input]
+  (work-1000
+   (fn []
+     (x>> input
+          (map inc)
+          (filter odd?)
+          (mapcat #(do [% (dec %)]))
+          (partition-by #(= 0 (mod % 5)))
+          (map (partial apply +))
+          (map (partial + 10))
+          (map #(do {:temp-value %}))
+          (map :temp-value)
+          (filter even?)
+          (apply +)
+          str
+          (take 3)
+          (apply str)
+          edn/read-string))))
+```
+Same deal as before but we're just doing a little extra work in our thread, repeating it a thousand times and then preparing the results for handoff to the next stage of execution.
+
+Now let's run the classical `->>` macro:
+```clojure
+(->> (range 100)
+     (repeat 10)
+     (map ->>work)
+     (map ->>work)
+     (map ->>work)
+     (map ->>work)
+     (map ->>work)
+     (map ->>work)
+     last
+     count
+     time)
+; "Elapsed time: 18309.397391 msecs"
+;=> 234
+```
+Just over 18 seconds. Now let's try the `x>>` version:
+```clojure
+(x>> (range 100)
+     (repeat 10)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     last
+     count
+     time)
+; "Elapsed time: 6252.224178 msecs"
+;=> 234
+```
+Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
+```clojure
+(=>> (range 100)
+     (repeat 10)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     last
+     count
+     time)
+; "Elapsed time: 2862.172838 msecs"
+;=> 234
+```
+Under 3 seconds. Much, much better!
+
+In the future I'd like to explore using parallel `folder` instead of `core.async` but this works pretty well.
 ## Clojurescript 
 In Clojurescript, the performance gains are even more pronounced. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
 ```clojure
@@ -110,6 +208,8 @@ While `x>>` version produces:
 50005499994
 ```
 That's a _six times_ speedup!
+
+Perhaps that speedup would not be so drastic if we tested both versions in _advanced_ compile mode. Then the difference in speed might come closer to the Clojure version. In any case, this is some very low-hanging performance fruit.
 ## Extending `injest`
 This feature is very experimental, but there is a `reg-xf!` macro that can take one or more transducers. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your namespaces - preferably in an initially loaded one.
 ```clojure

@@ -58,7 +58,7 @@
                (mapv #(if-not (and (c/transducable? (first %))
                                    (second %))
                         %
-                        (list (list `(xfn ~(mapv vec %))))))
+                        (list (list `(injest.core/xfn ~(mapv vec %))))))
                (apply concat))]
     (loop [x x, forms forms]
       (if forms
@@ -104,17 +104,70 @@
   [x & threads]
   (let [forms (clojure.core/->>
                threads
+               (c/qualify-thread &env)
                (partition-by #(c/transducable? %))
                (mapv #(if-not (and (c/transducable? (first %))
                                    (second %))
                         %
-                        (list (list `(xfn ~(mapv vec %))))))
+                        (list (list `(injest.core/xfn ~(mapv vec %))))))
                (apply concat))]
     (loop [x x, forms forms]
       (if forms
         (let [form (first forms)
               threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
                              (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                             (or (string? form) (nil? form) (boolean? form))
+                             (list x form)
+                             (int? form)
+                             (list `get-or-nth x form)
+                             :else
+                             (list form x))]
+          (recur threaded (next forms)))
+        x))))
+
+(defmacro =>
+  "Just like +> but first composes consecutive transducing fns into a function
+   that parallel-pipeline's the values flowing through the thread."
+  [x & threads]
+  (let [forms (->> threads
+                   (c/qualify-thread &env)
+                   (partition-by #(c/transducable? %))
+                   (mapv #(if-not (and (c/transducable? (first %))
+                                       (second %))
+                            %
+                            (list (list `(injest.core/pxfn ~(mapv vec %))))))
+                   (apply concat))]
+    (loop [x x, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
+                             (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                             (or (string? form) (nil? form) (boolean? form))
+                             (list x form)
+                             (int? form)
+                             (list `get-or-nth x form)
+                             :else
+                             (list form x))]
+          (recur threaded (next forms)))
+        x))))
+
+(defmacro =>>
+  "Just like +>> but first composes consecutive transducing fns into a function
+   that parallel-pipeline's the values flowing through the thread."
+  [x & threads]
+  (let [forms (->> threads
+                   (c/qualify-thread &env)
+                   (partition-by #(c/transducable? %))
+                   (mapv #(if-not (and (c/transducable? (first %))
+                                       (second %))
+                            %
+                            (list (list `(injest.core/pxfn ~(mapv vec %))))))
+                   (apply concat))]
+    (loop [x x, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
+                             (with-meta `(~(first form) ~@(next form) ~x) (meta form))
                              (or (string? form) (nil? form) (boolean? form))
                              (list x form)
                              (int? form)
@@ -238,7 +291,3 @@
     (+>> m 1 2 "b" 2 :c name)) ;=> "res"
   
   :end)
-  
-  
-  
-  

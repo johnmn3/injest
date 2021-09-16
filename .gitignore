@@ -15,3 +15,5 @@
 .hgignore
 .hg/
 linux-install-*
+.clj-kondo
+.lsp

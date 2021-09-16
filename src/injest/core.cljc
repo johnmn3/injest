@@ -1,5 +1,6 @@
 (ns injest.core
-  (:require [cljs.analyzer.api :as api])
+  (:require [cljs.analyzer.api :as api]
+            [clojure.core.async :as a :refer [chan to-chan! pipeline <!!]])
   #?(:cljs (:require-macros [injest.core])))
 
 (def def-regs
@@ -64,6 +65,16 @@
      (compose-transducer-group xf-group)
      args)))
 
+(defn pxfn [xf-group]
+  (fn [args]
+    (let [concurrent (+ 2 (.. Runtime getRuntime availableProcessors))
+          results (chan)]
+      (pipeline concurrent
+                results
+                (compose-transducer-group xf-group)
+                (to-chan! args))
+      (<!! (a/into [] results)))))
+
 (def safe-resolve
   #?(:clj resolve :cljs identity))
 
@@ -79,7 +90,7 @@
                 symbol)))))
 
 (defn qualify-form [x env]
-  (if-not env
+  (if-not (:ns env)
     (list (symbol (safe-resolve x)))
     (list
      (some-> x
@@ -137,6 +148,28 @@
           (recur threaded (next forms)))
         x))))
 
+(defmacro =>>
+  "Just like ->> but first composes consecutive transducing fns into a function
+   that parallel-pipeline's the values flowing through the thread."
+  [x & threads]
+  (let [forms (->> threads
+                   (qualify-thread &env)
+                   (partition-by #(transducable? %))
+                   (mapv #(if-not (and (transducable? (first %))
+                                       (second %))
+                            %
+                            (list (list `(pxfn ~(mapv vec %))))))
+                   (apply concat))]
+    (loop [x x, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (cond (seq? form)
+                             (with-meta `(~(first form) ~@(next form) ~x) (meta form))
+                             :else
+                             (list form x))]
+          (recur threaded (next forms)))
+        x))))
+
 (defmacro x>
   "Just like -> but first composes consecutive transducing fns into a function
    that sequences the second arguement through the transformers.
@@ -156,6 +189,7 @@
     2)"
   [x & threads]
   (let [forms (->> threads
+                   (qualify-thread &env)
                    (partition-by #(transducable? %))
                    (mapv #(if-not (and (transducable? (first %))
                                        (second %))
@@ -172,8 +206,31 @@
           (recur threaded (next forms)))
         x))))
 
+(defmacro =>
+  "Just like ->> but first composes consecutive transducing fns into a function
+   that parallel-pipeline's the values flowing through the thread."
+  [x & threads]
+  (let [forms (->> threads
+                   (qualify-thread &env)
+                   (partition-by #(transducable? %))
+                   (mapv #(if-not (and (transducable? (first %))
+                                       (second %))
+                            %
+                            (list (list `(pxfn ~(mapv vec %))))))
+                   (apply concat))]
+    (loop [x x, forms forms]
+      (if forms
+        (let [form (first forms)
+              threaded (cond (seq? form)
+                             (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+                             :else
+                             (list form x))]
+          (recur threaded (next forms)))
+        x))))
+
 (comment
 
+  (require '[clojure.edn :as edn])
   ;; (require '[net.cgrand.xforms :as x])
 
   ;; (reg-xf `x/reduce)
@@ -207,5 +264,103 @@
       ;;  first
        (apply +)
        time)
+
+  ;; work utilities
+  (defn work-1000 [work-fn]
+    (range (last (repeatedly 1000 work-fn))))
+
+  (defn ->>work [input]
+    (work-1000
+     (fn []
+       (->> input
+            (map inc)
+            (filter odd?)
+            (mapcat #(do [% (dec %)]))
+            (partition-by #(= 0 (mod % 5)))
+            (map (partial apply +))
+            (map (partial + 10))
+            (map #(do {:temp-value %}))
+            (map :temp-value)
+            (filter even?)
+            (apply +)
+            str
+            (take 3)
+            (apply str)
+            edn/read-string))))  
+
+  (defn x>>work [input]
+    (work-1000
+     (fn []
+       (x>> input
+            (map inc)
+            (filter odd?)
+            (mapcat #(do [% (dec %)]))
+            (partition-by #(= 0 (mod % 5)))
+            (map (partial apply +))
+            (map (partial + 10))
+            (map #(do {:temp-value %}))
+            (map :temp-value)
+            (filter even?)
+            (apply +)
+            str
+            (take 3)
+            (apply str)
+            edn/read-string))))
+
+  (->> (range 100)
+       (repeat 10)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       last
+       count
+       time)
+  ; "Elapsed time: 18309.397391 msecs"
+  ; 234
+
+  (x>> (range 100)
+       (repeat 10)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       last
+       count
+       time)
+  ; "Elapsed time: 6252.224178 msecs"
+  ; 234
+
+  (=>> (range 100)
+       (repeat 10)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       (map ->>work)
+       last
+       count
+       time)
+  ; "Elapsed time: 8976.963402 msecs"
+  ; 234
+
+  (=>> (range 100)
+       (repeat 10)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       (map x>>work)
+       last
+       count
+       time)
+  ; "Elapsed time: 2862.172838 msecs"
+  ; 234
 
   :end)
