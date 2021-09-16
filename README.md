@@ -7,16 +7,16 @@ This library makes it easier to use Clojure's most powerful features.
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.4" :git/sha "ddf8a6e"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.5" :git/sha "41e255e"}
   ...
 ```
-To try it in a repl right now, drop this in your shell:
+To try it in a repl right now, with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest 
-       {:git/tag "v0.1-alpha.4" 
-        :git/sha "ddf8a6e"}}}'
+      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.5" :git/sha "41e255e"}
+       criterium/criterium {:mvn/version "0.4.6"}
+       net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
 Then require the `injest` macros in your project:
 ```clojure
@@ -265,7 +265,7 @@ If you'd like to thread values through anonymous functions, like `#(- 10 % 1)` o
 ```
 This has the added benefit of conveying to the reader that the author intends for the anonymous function to only take one parameter. In the classical thread syntax, the reader would have to scan all the way to the end of `(#(... ` in order to know if an extra parameter is being passed in. It also prevents people from creating unmaintainable abstractions involving the threading of values into a literal lambda definition, which I would rather not have to maintain.
 ## Backwards compatability
-`+>` and `+>>` have the same laziness semantics as `->` and `+>>`. So, if you find yourself wanting to migrate a _path thread_ away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>` or `x>>` macro with the corresponding `+>` or `+>>` macro we required in above. Path navigating will continue to work:
+`+>` and `+>>` have the same laziness semantics as `->` and `->>`. So, if you find yourself wanting to migrate a _path thread_ away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>`, `x>>`, `=>` or `=>>` macro with the corresponding `+>` or `+>>` macro we required in above. Path navigating will continue to work:
 ```clojure
 (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
   (+>> m 1 2 "b" 2 :c name)) ;=> "res"
