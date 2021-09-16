@@ -272,7 +272,7 @@ This has the added benefit of conveying to the reader that the author intends fo
 ```
 You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
 # Future work
-A `px>>` thread macro that automatically parallelizes `folder`able `map`ping (and any other stateless) transducers would be nice. There are also other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
+There are other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
 # Caveats
 It should be noted as well:
 
