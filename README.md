@@ -196,13 +196,13 @@ Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
 Under 3 seconds. Much, much better!
 
 In the future I'd like to explore using parallel `folder` instead of `core.async` but this works pretty well.
-## Clojurescript 
-In Clojurescript, the performance gains are even more pronounced. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
+## Clojurescript
+In Clojurescript, we don't have the parallel thread macros, but for `x>` and `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
 ```clojure
 "Elapsed time: 3523.186678 msecs"
 50005499994
 ```
-While `x>>` version produces:
+While the `x>>` version produces:
 ```clojure
 "Elapsed time: 574.145888 msecs"
 50005499994
