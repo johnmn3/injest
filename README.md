@@ -7,14 +7,14 @@ This library makes it easier to use Clojure's most powerful features.
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest {:git/tag "v0.1-alpha.7" :git/sha "6a7ed2b"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.8" :git/sha "2ef19ec"}
   ...
 ```
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.7" :git/sha "6a7ed2b"}
+      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.8" :git/sha "2ef19ec"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
