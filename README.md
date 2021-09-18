@@ -199,7 +199,7 @@ Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
 ```
 Under 3 seconds. Much, much better!
 
-Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs - a performance increase of 5 fold for the `x>>` version, to an increase of 10 fold for the `=>>` version.
+Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs - a performance increase of 2 times faster for the `x>>` version, to an increase of 10 times faster for the `=>>` version.
 
 In the future I'd like to explore using parallel `folder` instead of `core.async` but this works pretty well.
 ## Clojurescript
@@ -217,7 +217,7 @@ That's a _six times_ speedup!
 
 Perhaps that speedup would not be so drastic if we tested both versions in _advanced_ compile mode. Then the difference in speed might come closer to the Clojure version. In any case, this is some very low-hanging performance fruit.
 ## Extending `injest`
-There is a `injest.state/reg-xf!` macro that can take one or more transducers. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
+The `injest.state` namespaces provides the `reg-xf!` and `reg-pxf!` macros that can take one or more transducers. Only stateless transducers (or, more precisely, transducers that can be used safely within a parallel `pipeline` context) should be registered with `reg-pxf!`. `injest`'s thread macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
 ```clojure
 (require '[injest.state :as i.s])
 (require '[net.cgrand.xforms :as x])
