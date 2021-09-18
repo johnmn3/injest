@@ -1,20 +1,15 @@
 (ns injest.test
-  (:require
-   [injest.state :as i.s]
+  (:require 
    [injest.path :as injest :refer [+> +>> x> x>> => =>>]]))
 
+;; core/legacy tests
 (comment
-
-  ;; these aren't workign in cljs
-  (i.s/regxf! 'cljs.core/map)
-  (i.s/reg-xf! map)
 
   (require '[clojure.edn :as edn])
   ;; (require '[net.cgrand.xforms :as x])
 
   ;; (reg-xf `x/reduce)
 
-  ;; copied from test.clj, recorded times need to be updated for cljs
   (->> (range 10000000)
        (map inc)
        (filter odd?)
