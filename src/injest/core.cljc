@@ -167,12 +167,12 @@
        x))
    thread))
 
-(defn pre-transducify-thread [env t-fn t-pred thread]
+(defn pre-transducify-thread [env minimum-group-size t-fn t-pred thread]
   (->> thread
        (qualify-thread env)
        (partition-by #(t-pred %))
        (mapv #(if-not (and (t-pred (first %))
-                           (second %))
+                           (not (< (count %) minimum-group-size)))
                 %
                 (list (list `(~t-fn ~(mapv vec %))))))
        (apply concat)))
@@ -181,13 +181,13 @@
   "Just like -> but first composes consecutive transducing fns into a function
   that sequences the second arguement through the transformers."
   [x & thread]
-  `(-> ~x ~@(->> thread (pre-transducify-thread &env `xfn transducable?))))
+  `(-> ~x ~@(->> thread (pre-transducify-thread &env 2 `xfn transducable?))))
 
 (defmacro x>>
   "Just like ->> but first composes consecutive transducing fns into a function
   that sequences the last arguement through the transformers."
   [x & thread]
-  `(->> ~x ~@(->> thread (pre-transducify-thread &env `xfn transducable?))))
+  `(->> ~x ~@(->> thread (pre-transducify-thread &env 2 `xfn transducable?))))
 
 #?(:clj
    (defmacro =>
@@ -195,7 +195,7 @@
       into a function that parallel-pipeline's the values flowing through the thread.
       Remaining consecutive stateful transducers are composed just like x>."
      [x & thread]
-     `(x> ~x ~@(->> thread (pre-transducify-thread &env `pxfn par-transducable?)))))
+     `(x> ~x ~@(->> thread (pre-transducify-thread &env 1 `pxfn par-transducable?)))))
 
 #?(:clj
    (defmacro =>>
@@ -203,7 +203,7 @@
       into a function that parallel-pipeline's the values flowing through the thread.
       Remaining consecutive stateful transducers are composed just like x>>."
      [x & thread]
-     `(x>> ~x ~@(->> thread (pre-transducify-thread &env `pxfn par-transducable?)))))
+     `(x>> ~x ~@(->> thread (pre-transducify-thread &env 1 `pxfn par-transducable?)))))
 
 (comment
 

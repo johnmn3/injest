@@ -79,13 +79,13 @@
   "Just like +> but first composes consecutive transducing fns into a function
   that sequences the last arguement through the transformers."
   [x & thread]
-  `(+> ~x ~@(->> thread (c/pre-transducify-thread &env `c/xfn c/transducable?))))
+  `(+> ~x ~@(->> thread (c/pre-transducify-thread &env 2 `c/xfn c/transducable?))))
 
 (defmacro x>>
   "Just like +>> but first composes consecutive transducing fns into a function
   that sequences the last arguement through the transformers."
   [x & thread]
-  `(+>> ~x ~@(->> thread (c/pre-transducify-thread &env `c/xfn c/transducable?))))
+  `(+>> ~x ~@(->> thread (c/pre-transducify-thread &env 2 `c/xfn c/transducable?))))
 
 ;; parallel transducer version
 #?(:clj
@@ -94,7 +94,7 @@
      into a function that parallel-pipeline's the values flowing through the thread.
      Remaining consecutive stateful transducers are composed just like x>."
      [x & thread]
-     `(x> ~x ~@(->> thread (c/pre-transducify-thread &env `c/pxfn c/par-transducable?)))))
+     `(x> ~x ~@(->> thread (c/pre-transducify-thread &env 1 `c/pxfn c/par-transducable?)))))
 
 #?(:clj
    (defmacro =>>
@@ -102,7 +102,7 @@
      into a function that parallel-pipeline's the values flowing through the thread.
      Remaining consecutive stateful transducers are composed just like x>>."
      [x & thread]
-     `(x>> ~x ~@(->> thread (c/pre-transducify-thread &env `c/pxfn c/par-transducable?)))))
+     `(x>> ~x ~@(->> thread (c/pre-transducify-thread &env 1 `c/pxfn c/par-transducable?)))))
 
 (comment
 
