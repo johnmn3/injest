@@ -7,14 +7,14 @@ This library makes it easier to use Clojure's most powerful features.
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.5" :git/sha "41e255e"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.6" :git/sha "0a5f2df"}
   ...
 ```
 To try it in a repl right now, with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.5" :git/sha "41e255e"}
+      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.6" :git/sha "0a5f2df"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -196,13 +196,13 @@ Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
 Under 3 seconds. Much, much better!
 
 In the future I'd like to explore using parallel `folder` instead of `core.async` but this works pretty well.
-## Clojurescript 
-In Clojurescript, the performance gains are even more pronounced. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
+## Clojurescript
+In Clojurescript, we don't have the parallel thread macros, but for `x>` and `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
 ```clojure
 "Elapsed time: 3523.186678 msecs"
 50005499994
 ```
-While `x>>` version produces:
+While the `x>>` version produces:
 ```clojure
 "Elapsed time: 574.145888 msecs"
 50005499994
@@ -272,7 +272,7 @@ This has the added benefit of conveying to the reader that the author intends fo
 ```
 You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
 # Future work
-There are other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
+With regards to the parallel transducing threads, I'd like to explore `folder`. There are other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
 # Caveats
 It should be noted as well:
 
@@ -283,6 +283,7 @@ It should be noted as well:
 If you have any problems, feature requests or ideas, feel free to drop a note in the issues or discuss it in the clojureverse [thread](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122/9).
 # References
 Some other perfomance-related investigations you may be interested in:
+* [cgrand/xforms](https://github.com/cgrand/xforms) - More transducers and reducing functions for Clojure(script)!
 * [clj-fast](https://github.com/bsless/clj-fast) - optimized core functions
 * [structural](https://github.com/joinr/structural) - efficient destructuring
 
