@@ -3,8 +3,39 @@
             #?(:clj [clojure.core.async :as a :refer [chan to-chan! pipeline <!!]]))
   #?(:cljs (:require-macros [injest.core])))
 
+(def par-regs
+  #{'cljs.core/dedupe
+    'cljs.core/disj!
+    'cljs.core/dissoc!
+    'cljs.core/filter
+    'cljs.core/keep
+    'cljs.core/map
+    'cljs.core/random-sample
+    'cljs.core/remove
+    'cljs.core/replace
+    'cljs.core/take-while
+    'cljs.core/halt-when
+    'cljs.core/mapcat
+    'cljs.core/cat
+
+    'clojure.core/dedupe
+    'clojure.core/disj!
+    'clojure.core/dissoc!
+    'clojure.core/filter
+    'clojure.core/keep
+    'clojure.core/map
+    'clojure.core/random-sample
+    'clojure.core/remove
+    'clojure.core/replace
+    'clojure.core/take-while
+    'clojure.core/halt-when
+    'clojure.core/mapcat
+    'clojure.core/cat})
+
 (def def-regs
   #{'cljs.core/mapcat
+    'cljs.core/disj!
+    'cljs.core/dissoc!
     'cljs.core/keep
     'cljs.core/filter
     'cljs.core/take-while
@@ -25,14 +56,17 @@
     'cljs.core/interpose
     'cljs.core/map-indexed
     'cljs.core/drop
+    'cljs.core/halt-when
 
     'clojure.core/take-nth
+    'clojure.core/disj!
+    'clojure.core/dissoc!
     'clojure.core/distinct
     'clojure.core/keep-indexed
     'clojure.core/random-sample
     'clojure.core/map-indexed
-    #_ ; <- map is being added below, via registration
-    'clojure.core/map
+    #_; <- map is being added below, via registration
+      'clojure.core/map
     'clojure.core/replace
     'clojure.core/drop
     'clojure.core/remove
@@ -46,13 +80,20 @@
     'clojure.core/take-while
     'clojure.core/take
     'clojure.core/keep
-    'clojure.core/filter})
+    'clojure.core/filter
+    'clojure.core/halt-when})
 
 (def transducables (atom #{}))
+
+(def par-transducables (atom #{}))
 
 (defn transducable? [form]
   (when (sequential? form)
     (->> form first (contains? @transducables))))
+
+(defn par-transducable? [form]
+  (when (sequential? form)
+    (->> form first (contains? @par-transducables))))
 
 (defn compose-transducer-group [xfs]
   (->> xfs
@@ -106,7 +147,15 @@
 (defn regxf! [& xfs]
   (swap! transducables into xfs))
 
+(defmacro reg-pxf! [& xfs]
+  `(swap! par-transducables into ~(->> xfs (mapv #(qualify-sym % &env)))))
+
+(defn regpxf! [& xfs]
+  (swap! par-transducables into xfs))
+
 (apply regxf! def-regs)
+
+(apply regpxf! par-regs)
 
 (regxf! 'clojure.core/map) ; or (reg-xf! map) ; Must be called from Clojure
 
@@ -118,118 +167,43 @@
        x))
    thread))
 
-(defmacro x>>
-  "Just like ->> but first composes consecutive transducing fns into a function
-     that sequences the last arguement through the transformers.
-   
-   So:
-     (x>> [1 2 3] 
-          (map inc) 
-          (map (partial + 2)))
-
-   Becomes:
-     ((xfn [[map inc] [map (partial + 2)]]) 
-      [1 2 3])"
-  [x & threads]
-  (let [forms (->> threads
-                   (qualify-thread &env)
-                   (partition-by #(transducable? %))
-                   (mapv #(if-not (and (transducable? (first %))
-                                       (second %))
-                            %
-                            (list (list `(xfn ~(mapv vec %))))))
-                   (apply concat))]
-    (loop [x x, forms forms]
-      (if forms
-        (let [form (first forms)
-              threaded (cond (seq? form)
-                             (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                             :else
-                             (list form x))]
-          (recur threaded (next forms)))
-        x))))
-
-#?(:clj
-   (defmacro =>>
-     "Just like ->> but first composes consecutive transducing fns into a function
-     that parallel-pipeline's the values flowing through the thread."
-     [x & threads]
-     (let [forms (->> threads
-                      (qualify-thread &env)
-                      (partition-by #(transducable? %))
-                      (mapv #(if-not (and (transducable? (first %))
-                                          (second %))
-                               %
-                               (list (list `(pxfn ~(mapv vec %))))))
-                      (apply concat))]
-       (loop [x x, forms forms]
-         (if forms
-           (let [form (first forms)
-                 threaded (cond (seq? form)
-                                (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                                :else
-                                (list form x))]
-             (recur threaded (next forms)))
-           x)))))
+(defn pre-transducify-thread [env t-fn t-pred thread]
+  (->> thread
+       (qualify-thread env)
+       (partition-by #(t-pred %))
+       (mapv #(if-not (and (t-pred (first %))
+                           (second %))
+                %
+                (list (list `(~t-fn ~(mapv vec %))))))
+       (apply concat)))
 
 (defmacro x>
   "Just like -> but first composes consecutive transducing fns into a function
-  that sequences the second arguement through the transformers.
+  that sequences the second arguement through the transformers."
+  [x & thread]
+  `(-> ~x ~@(->> thread (pre-transducify-thread &env `xfn transducable?))))
 
-  So:
-  (x> [1 2 3]
-      (conj 4)
-      (map inc)
-      (map (partial + 2))
-      2)
-
-  Becomes:
-  (nth
-   ((xfn [[map inc] [map (partial + 2)]]) 
-    (conj [1 2 3] 
-         4)) 
-   2)"
-  [x & threads]
-  (let [forms (->> threads
-                   (qualify-thread &env)
-                   (partition-by #(transducable? %))
-                   (mapv #(if-not (and (transducable? (first %))
-                                       (second %))
-                            %
-                            (list (list `(xfn ~(mapv vec %))))))
-                   (apply concat))]
-    (loop [x x, forms forms]
-      (if forms
-        (let [form (first forms)
-              threaded (cond (seq? form)
-                             (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                             :else
-                             (list form x))]
-          (recur threaded (next forms)))
-        x))))
+(defmacro x>>
+  "Just like ->> but first composes consecutive transducing fns into a function
+  that sequences the last arguement through the transformers."
+  [x & thread]
+  `(->> ~x ~@(->> thread (pre-transducify-thread &env `xfn transducable?))))
 
 #?(:clj
    (defmacro =>
-     "Just like ->> but first composes consecutive transducing fns into a function
-     that parallel-pipeline's the values flowing through the thread."
-     [x & threads]
-     (let [forms (->> threads
-                      (qualify-thread &env)
-                      (partition-by #(transducable? %))
-                      (mapv #(if-not (and (transducable? (first %))
-                                          (second %))
-                               %
-                               (list (list `(pxfn ~(mapv vec %))))))
-                      (apply concat))]
-       (loop [x x, forms forms]
-         (if forms
-           (let [form (first forms)
-                 threaded (cond (seq? form)
-                                (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                                :else
-                                (list form x))]
-             (recur threaded (next forms)))
-           x)))))
+     "Just like -> but first composes consecutive stateless transducing functions 
+      into a function that parallel-pipeline's the values flowing through the thread.
+      Remaining consecutive stateful transducers are composed just like x>."
+     [x & thread]
+     `(x> ~x ~@(->> thread (pre-transducify-thread &env `pxfn par-transducable?)))))
+
+#?(:clj
+   (defmacro =>>
+     "Just like -> but first composes consecutive stateless transducing functions 
+      into a function that parallel-pipeline's the values flowing through the thread.
+      Remaining consecutive stateful transducers are composed just like x>>."
+     [x & thread]
+     `(x>> ~x ~@(->> thread (pre-transducify-thread &env `pxfn par-transducable?)))))
 
 (comment
 
@@ -289,7 +263,7 @@
             str
             (take 3)
             (apply str)
-            edn/read-string))))  
+            edn/read-string))))
 
   (defn x>>work [input]
     (work-1000

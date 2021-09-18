@@ -9,15 +9,10 @@
     (nth m-or-v aval)))
 
 (comment 
-  
   (get-or-nth {0 :a 2 :b} 2) ;=> :b
-
   (get-or-nth [:a :b :c] 2) ;=> :c
-
   (get-or-nth `(x y z) 2) ;=> injest.path/z
-  
   (get-or-nth {0 :a nil 2} nil) ;=> 2
-
   (get-or-nth {0 :a false 2} false) ;=> 2
 
   :end)
@@ -27,206 +22,87 @@
 (defmacro reg-xf! [& args]
   `(c/reg-xf! ~@args))
 
-(defmacro x>>
-  "Just like +>> but first composes consecutive transducing fns into a function
-   that sequences the last arguement through the transformers.
-   
-   Example:
-     
-     (x>> [1 2 3] 
-          (map inc) 
-          (map (partial + 2)))
-     Becomes:
-     
-     ((xfn [[map inc] 
-            [map (partial + 2)]]) 
-      [1 2 3])
+(defmacro reg-pxf! [& xfs]
+  `(c/reg-pxf! ~@xfs))
 
-   Additionally, for ints will index on vectors and sequences and will 
-   call `get` on maps. All strings, boolans and nils will be passed to the thread value.
-   
-   As in:
-   
-   (let [m {1 {\"b\" [0 1 {:c :res}]}}]
-     (x>> m 1 \"b\" 2 :c name)) ;=> \"res\""
+(def regpxf! c/regpxf!)
 
-  [x & threads]
-  (let [forms (clojure.core/->>
-               threads
-               (c/qualify-thread &env)
-               (partition-by #(c/transducable? %))
-               (mapv #(if-not (and (c/transducable? (first %))
-                                   (second %))
-                        %
-                        (list (list `(injest.core/xfn ~(mapv vec %))))))
-               (apply concat))]
-    (loop [x x, forms forms]
-      (if forms
-        (let [form (first forms)
-              threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
-                             (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                             (or (string? form) (nil? form) (boolean? form))
-                             (list x form)
-                             (int? form)
-                             (list `get-or-nth x form)
-                             :else
-                             (list form x))]
-          (recur threaded (next forms)))
-        x))))
+(defn path-thread-first [form x]
+  (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
+        (with-meta `(~(first form) ~x ~@(next form)) (meta form))
+        (or (string? form) (nil? form) (boolean? form))
+        (list x form)
+        (int? form)
+        (list `get-or-nth x form)
+        :else
+        (list form x)))
 
-(defmacro x>
-  "Just like +> but first composes consecutive transducing fns into a function
-   that sequences the second arguement through the transformers.
-
-   Example:
-   
-   (x> [1 2 3]
-       (conj 4)
-       (map inc)
-       (map (partial + 2))
-       2)
-   Becomes like:
-   
-   (nth
-    ((xfn [[map inc] [map (partial + 2)]]) 
-     (conj [1 2 3] 
-           4)) 
-    2)
-   
-   Additionally, ints will index on vectors and sequences and will 
-   call `get` on maps. All strings, boolans and nils will be passed to the thread value.
-   
-   As in:
-   
-   (let [m {1 {\"b\" [0 1 {:c :res}]}}]
-     (x> m 1 \"b\" 2 :c name)) ;=> \"res\""
-  
-  [x & threads]
-  (let [forms (clojure.core/->>
-               threads
-               (c/qualify-thread &env)
-               (partition-by #(c/transducable? %))
-               (mapv #(if-not (and (c/transducable? (first %))
-                                   (second %))
-                        %
-                        (list (list `(injest.core/xfn ~(mapv vec %))))))
-               (apply concat))]
-    (loop [x x, forms forms]
-      (if forms
-        (let [form (first forms)
-              threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
-                             (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                             (or (string? form) (nil? form) (boolean? form))
-                             (list x form)
-                             (int? form)
-                             (list `get-or-nth x form)
-                             :else
-                             (list form x))]
-          (recur threaded (next forms)))
-        x))))
-
-#?(:clj
-   (defmacro =>
-     "Just like +> but first composes consecutive transducing fns into a function
-     that parallel-pipeline's the values flowing through the thread."
-     [x & threads]
-     (let [forms (->> threads
-                      (c/qualify-thread &env)
-                      (partition-by #(c/transducable? %))
-                      (mapv #(if-not (and (c/transducable? (first %))
-                                          (second %))
-                               %
-                               (list (list `(injest.core/pxfn ~(mapv vec %))))))
-                      (apply concat))]
-       (loop [x x, forms forms]
-         (if forms
-           (let [form (first forms)
-                 threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
-                                (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                                (or (string? form) (nil? form) (boolean? form))
-                                (list x form)
-                                (int? form)
-                                (list `get-or-nth x form)
-                                :else
-                                (list form x))]
-             (recur threaded (next forms)))
-           x)))))
-
-#?(:clj
-   (defmacro =>>
-     "Just like +>> but first composes consecutive transducing fns into a function
-     that parallel-pipeline's the values flowing through the thread."
-     [x & threads]
-     (let [forms (->> threads
-                      (c/qualify-thread &env)
-                      (partition-by #(c/transducable? %))
-                      (mapv #(if-not (and (c/transducable? (first %))
-                                          (second %))
-                               %
-                               (list (list `(injest.core/pxfn ~(mapv vec %))))))
-                      (apply concat))]
-       (loop [x x, forms forms]
-         (if forms
-           (let [form (first forms)
-                 threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
-                                (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                                (or (string? form) (nil? form) (boolean? form))
-                                (list x form)
-                                (int? form)
-                                (list `get-or-nth x form)
-                                :else
-                                (list form x))]
-             (recur threaded (next forms)))
-           x)))))
+(defn path-thread-last [form x]
+  (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
+        (with-meta `(~(first form) ~@(next form) ~x) (meta form))
+        (or (string? form) (nil? form) (boolean? form))
+        (list x form)
+        (int? form)
+        (list `get-or-nth x form)
+        :else
+        (list form x)))
 
 ;; non-transducer versions, with path navigation, for untransducifying a transducified path thread
-
 (defmacro +>
-  "Same as clojure.core/-> but for ints will index on vectors and sequences and will 
+  "Just like -> but for ints will index on vectors and sequences and will 
    call `get` on maps. All strings, boolans and nils will be passed to the thread value.
    
    As in:
-   
    (let [m {1 {\"b\" [0 1 {:c :res}]}}]
      (+> m 1 \"b\" 2 :c name)) ;=> \"res\""
   [x & forms]
   (loop [x x, forms forms]
     (if forms
-      (let [form (first forms)
-            threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
-                           (with-meta `(~(first form) ~x ~@(next form)) (meta form))
-                           (or (string? form) (nil? form) (boolean? form))
-                           (list x form)
-                           (int? form)
-                           (list `get-or-nth x form)
-                           :else
-                           (list form x))]
-        (recur threaded (next forms)))
+      (recur (path-thread-first (first forms) x) (next forms))
       x)))
 
 (defmacro +>>
-  "Same as clojure.core/-> but for ints will index on vectors and sequences and will 
+  "Just like ->> but for ints will index on vectors and sequences and will 
    call `get` on maps. All strings, boolans and nils will be passed to the thread value.
    
    As in:
-   
    (let [m {1 {\"b\" [0 1 {:c :res}]}}]
      (->> m 1 \"b\" 2 :c name)) ;=> \"res\""
   [x & forms]
   (loop [x x, forms forms]
     (if forms
-      (let [form (first forms)
-            threaded (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
-                           (with-meta `(~(first form) ~@(next form) ~x) (meta form))
-                           (or (string? form) (nil? form) (boolean? form))
-                           (list x form)
-                           (int? form)
-                           (list `get-or-nth x form)
-                           :else
-                           (list form x))]
-        (recur threaded (next forms)))
+      (recur (path-thread-last (first forms) x) (next forms))
       x)))
 
+;; transducer version
+(defmacro x>
+  "Just like +> but first composes consecutive transducing fns into a function
+  that sequences the last arguement through the transformers."
+  [x & thread]
+  `(+> ~x ~@(->> thread (c/pre-transducify-thread &env `c/xfn c/transducable?))))
+
+(defmacro x>>
+  "Just like +>> but first composes consecutive transducing fns into a function
+  that sequences the last arguement through the transformers."
+  [x & thread]
+  `(+>> ~x ~@(->> thread (c/pre-transducify-thread &env `c/xfn c/transducable?))))
+
+;; parallel transducer version
+#?(:clj
+   (defmacro =>
+     "Just like +> but first composes consecutive stateless transducing functions 
+     into a function that parallel-pipeline's the values flowing through the thread.
+     Remaining consecutive stateful transducers are composed just like x>."
+     [x & thread]
+     `(x> ~x ~@(->> thread (c/pre-transducify-thread &env `c/pxfn c/par-transducable?)))))
+
+#?(:clj
+   (defmacro =>>
+     "Just like +>> but first composes consecutive stateless transducing functions 
+     into a function that parallel-pipeline's the values flowing through the thread.
+     Remaining consecutive stateful transducers are composed just like x>>."
+     [x & thread]
+     `(x>> ~x ~@(->> thread (c/pre-transducify-thread &env `c/pxfn c/par-transducable?)))))
 
 (comment
 
@@ -292,4 +168,17 @@
   (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
     (+>> m 1 2 "b" 2 :c name)) ;=> "res"
   
+  (x>> (range 10000000)
+       (map inc)
+       (filter odd?)
+       (mapcat #(do [% (dec %)]))
+       (partition-by #(= 0 (mod % 5)))
+       (map (partial apply +))
+       (map (partial + 10))
+       (map #(do {:temp-value %}))
+       (map :temp-value)
+       (filter even?)
+       (apply +)
+       time)
+
   :end)
