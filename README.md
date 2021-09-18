@@ -7,14 +7,14 @@ This library makes it easier to use Clojure's most powerful features.
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.8" :git/sha "2ef19ec"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.9" :git/sha "4a6d6c0"}
   ...
 ```
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.8" :git/sha "2ef19ec"}
+      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.9" :git/sha "4a6d6c0"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -255,7 +255,7 @@ Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces
   (:require [injest.path :refer [+> +>> x> x>> => =>>]]
    ...
 ```
-Ergonomically, path threads provide a semantic superset of the behaviors found in `->` and `->>`. In other words, there is nothing you can do with `->` that you can't do with `+>`. All the thread macros in `injest.path` have these path thread semantics.
+Ergonomically, path threads provide a semantic superset of the behaviors found in `->` and `->>`. In other words, there is generally nothing you can do with `->` that you can't do with `+>`. All the thread macros in `injest.path` have these path thread semantics.
 ## As a replacement for `get-in`
 In path threads, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences with integers and replace `get`/`get-in` for most cases involving access in heterogeneous nestings:
 ```clojure
