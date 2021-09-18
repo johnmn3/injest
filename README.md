@@ -270,12 +270,17 @@ If you'd like to thread values through anonymous functions, like `#(- 10 % 1)` o
 ```clojure
 (x> 10 range rest 2 #(- 10 % 1)) ;=> 6
 ```
+Or, extending our prior example:
+```clojure
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
+  (x>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
+```
 This has the added benefit of conveying to the reader that the author intends for the anonymous function to only take one parameter. In the classical thread syntax, the reader would have to scan all the way to the end of `(#(... ` in order to know if an extra parameter is being passed in. This also prevents people from creating unmaintainable abstractions involving the threading of values into a literal lambda definition.
 ## Backwards compatability
 `+>` and `+>>` have the same laziness semantics as `->` and `->>`. So, if you find yourself wanting to migrate a _path thread_ away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>`, `x>>`, `=>` or `=>>` macro with the corresponding `+>` or `+>>` macro we required in above. Path navigating will continue to work:
 ```clojure
-(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
-  (+>> m 1 2 "b" 2 :c name)) ;=> "res"
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
+  (+>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
 ```
 You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
 # Future work
