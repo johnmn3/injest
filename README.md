@@ -1,38 +1,39 @@
-# `injest`: `+>` `+>>` `x>` `x>>` `=>` `=>>`
-## Path-navigating, auto-transducifying, auto-parallelizing thread macros
-This library makes it easier to use Clojure's most powerful features.
+# `injest` path threads: `+>` `+>>` `x>>` `=>>`
+Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `->` and `->>` [thrushes](http://blog.fogus.me/2010/09/28/thrush-in-clojure-redux/)) are great for navigating into data and transforming sequences. `injest`'s [_path thread_](#extras) macros `+>` and `+>>` are just like `->` and `->>` but with expanded path navigating abilities similar to `get-in`.
 
-`injest`'s thread macros scan forms for contiguous groups of transducers and comps them together into a function that `sequence`s or parallel `pipeline`s the values flowing in the thread through the transducers. `injest` also introduces optional _path thread_ semantics which provide more ergonomic path navigation into threaded values.
+[Transducers](https://clojure.org/reference/transducers) are great for performing sequence transformations efficiently. `x>>` combines the efficiency of transducers with the better ergonomics of `+>>`. Thread performance can be further extended by automatically parallelizing work with `=>>`.
+
+`injest` macros achieve this by scanning forms for contiguous groups of transducers and `comp`ing them together into a function that `sequence`s or parallel `pipeline`s the values flowing in the thread through the transducers.
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.9" :git/sha "4a6d6c0"}
+  net.clojars.john/injest {:mvn/version "0.1.0-alpha.10"}
   ...
 ```
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.9" :git/sha "4a6d6c0"}
+      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.10"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
-For classical thread semantics, require the `injest` macros in your project:
+Then require the `injest` macros in your project:
 ```clojure
 (ns ...
-  (:require [injest.core :refer [x> x>> => =>>]]
+  (:require [injest.path :refer [+> +>> x>> =>>]]
    ...
 ```
-For more modern conveniences, I recommend requiring in the `injest.path` namespace instead of the `injest.core` namespace:
+To just use `x>>` or `=>>` with the classical thread behavior, without the additional path thread semantics, you can require in the `injest.core` namespace instead of the `injest.path` namespace:
 ```clojure
 (ns ...
-  (:require [injest.path :refer [+> +>> x> x>> => =>>]]
+  (:require [injest.core :refer [x>> =>>]]
    ...
 ```
-The `injest.path` namespace provides `x>`, `x>>`, `=>` and `=>>` with the additional _'path thread'_ semantics of `+>` and `+>>`, [described below](#extras). However, because `injest.path` provides an extra value proposition, this library won't be imposing those conveniences on the default transducifyng semantics in `injest.core`. This way Clojure shop's with different appetite's for semantic advancements can adopt these extra features more gradually, if at all.
+Having these two `:require` options allow you to adopt a la carte these orthogonal value propositions of _improved performance_ and _improved navigation_.
 # Details
-Why? Well:
+Why? Well, for one, performance:
 
 ```clojure
 (->> (range 10000000)
