@@ -7,14 +7,14 @@ This library makes it easier to use Clojure's most powerful features.
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.8" :git/sha "2ef19ec"}
+  io.github.johnmn3/injest  {:git/tag "v0.1-alpha.9" :git/sha "4a6d6c0"}
   ...
 ```
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.8" :git/sha "2ef19ec"}
+      {io.github.johnmn3/injest {:git/tag "v0.1-alpha.9" :git/sha "4a6d6c0"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -199,7 +199,7 @@ Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
 ```
 Under 3 seconds. Much, much better!
 
-Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs - a performance increase of 5 fold for the `x>>` version, to an increase of 10 fold for the `=>>` version.
+Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs - a performance increase of 2 times faster for the `x>>` version, to an increase of 10 times faster for the `=>>` version.
 
 In the future I'd like to explore using parallel `folder` instead of `core.async` but this works pretty well.
 ## Clojurescript
@@ -217,7 +217,7 @@ That's a _six times_ speedup!
 
 Perhaps that speedup would not be so drastic if we tested both versions in _advanced_ compile mode. Then the difference in speed might come closer to the Clojure version. In any case, this is some very low-hanging performance fruit.
 ## Extending `injest`
-There is a `injest.state/reg-xf!` macro that can take one or more transducers. `injest` macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
+The `injest.state` namespaces provides the `reg-xf!` and `reg-pxf!` macros that can take one or more transducers. Only stateless transducers (or, more precisely, transducers that can be used safely within a parallel `pipeline` context) should be registered with `reg-pxf!`. `injest`'s thread macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
 ```clojure
 (require '[injest.state :as i.s])
 (require '[net.cgrand.xforms :as x])
@@ -255,7 +255,7 @@ Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces
   (:require [injest.path :refer [+> +>> x> x>> => =>>]]
    ...
 ```
-Ergonomically, path threads provide a semantic superset of the behaviors found in `->` and `->>`. In other words, there is nothing you can do with `->` that you can't do with `+>`. All the thread macros in `injest.path` have these path thread semantics.
+Ergonomically, path threads provide a semantic superset of the behaviors found in `->` and `->>`. In other words, there is generally nothing you can do with `->` that you can't do with `+>`. All the thread macros in `injest.path` have these path thread semantics.
 ## As a replacement for `get-in`
 In path threads, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences with integers and replace `get`/`get-in` for most cases involving access in heterogeneous nestings:
 ```clojure
@@ -270,12 +270,17 @@ If you'd like to thread values through anonymous functions, like `#(- 10 % 1)` o
 ```clojure
 (x> 10 range rest 2 #(- 10 % 1)) ;=> 6
 ```
+Or, extending our prior example:
+```clojure
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
+  (x>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
+```
 This has the added benefit of conveying to the reader that the author intends for the anonymous function to only take one parameter. In the classical thread syntax, the reader would have to scan all the way to the end of `(#(... ` in order to know if an extra parameter is being passed in. This also prevents people from creating unmaintainable abstractions involving the threading of values into a literal lambda definition.
 ## Backwards compatability
 `+>` and `+>>` have the same laziness semantics as `->` and `->>`. So, if you find yourself wanting to migrate a _path thread_ away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>`, `x>>`, `=>` or `=>>` macro with the corresponding `+>` or `+>>` macro we required in above. Path navigating will continue to work:
 ```clojure
-(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
-  (+>> m 1 2 "b" 2 :c name)) ;=> "res"
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
+  (+>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
 ```
 You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
 # Future work
