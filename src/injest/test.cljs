@@ -1,7 +1,7 @@
 (ns injest.test
   (:require
    [injest.state :as i.s]
-   [injest.path :as injest :refer [+> +>> x> x>> => =>>]]))
+   [injest.path :as injest :refer [+> +>> x> x>> <> <>>]]))
 
 (comment
 
@@ -115,7 +115,7 @@
   ; "Elapsed time: 6252.224178 msecs"
   ; 234
 
-  (=>> (range 100)
+  (<>> (range 100)
        (repeat 10)
        (map ->>work)
        (map ->>work)
@@ -129,7 +129,7 @@
   ; "Elapsed time: 8976.963402 msecs"
   ; 234
 
-  (=>> (range 100)
+  (<>> (range 100)
        (repeat 10)
        (map x>>work)
        (map x>>work)
