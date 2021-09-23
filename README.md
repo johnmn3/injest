@@ -1,9 +1,9 @@
-# `injest` path threads: `+>` `+>>` `x>>` `=>>`
-Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `->` and `->>` [thrushes](http://blog.fogus.me/2010/09/28/thrush-in-clojure-redux/)) are great for navigating into data and transforming sequences. `injest`'s [_path thread_](#extras) macros `+>` and `+>>` are just like `->` and `->>` but with expanded path navigating abilities similar to `get-in`.
+# `injest`: `+>` `+>>` `x>>` `=>>`
+Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `->` and `->>` [thrushes](http://blog.fogus.me/2010/09/28/thrush-in-clojure-redux/)) are great for navigating into data and transforming sequences. `injest`'s [_path thread_](#path-threads) macros `+>` and `+>>` are just like `->` and `->>` but with expanded path navigating abilities similar to `get-in`.
 
 [Transducers](https://clojure.org/reference/transducers) are great for performing sequence transformations efficiently. `x>>` combines the efficiency of transducers with the better ergonomics of `+>>`. Thread performance can be further extended by automatically parallelizing work with `=>>`.
 
-`injest` macros achieve this by scanning forms for contiguous groups of transducers and `comp`ing them together into a function that `sequence`s or parallel `pipeline`s the values flowing in the thread through the transducers.
+`injest` macros achieve this by scanning forms for contiguous groups of transducers and `comp`ing them together into a function that either `sequence`s or parallel `fold`s the values flowing in the thread through the transducers.
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
@@ -25,16 +25,50 @@ Then require the `injest` macros in your project:
   (:require [injest.path :refer [+> +>> x>> =>>]]
    ...
 ```
-To just use `x>>` or `=>>` with the classical thread behavior, without the additional path thread semantics, you can require in the `injest.core` namespace instead of the `injest.path` namespace:
+To just use `x>>` or `=>>` with the classical thread behavior, without the additional [_path thread_](#path-threads) semantics, you can require in the `injest.classical` namespace instead of the `injest.path` namespace:
 ```clojure
 (ns ...
-  (:require [injest.core :refer [x>> =>>]]
+  (:require [injest.classical :refer [x>> =>>]]
    ...
 ```
-Having these two `:require` options allow you to adopt a la carte these orthogonal value propositions of _improved performance_ and _improved navigation_.
-# Details
-Why? Well, for one, performance:
+Having these two `:require` options allows individuals and organizations to adopt a la carte these orthogonal value propositions of _improved performance_ and _improved navigation_.
+# Path Threads
+`injest.path` allows for more intuitive path navigation, like you're used to with the `(-> m :a :b :c)` idiom. We refer to these as _path threads_.
 
+Ergonomically, path threads provide a semantic superset of the behaviors found in `->` and `->>`. In other words, there is generally nothing you can do with `->` that you can't do with `+>`. All the thread macros in `injest.path` have these path thread semantics.
+## As a replacement for `get-in`, `get` and `nth`
+In path threads, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences with integers, like you would with `nth`, and replace `get`/`get-in` for most cases involving access in heterogeneous map nestings:
+```clojure
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
+  (+> m 1 2 "b" 2 :c name)) ;=> "res"
+```
+Here, we're looking up `1` in the map, then getting the third element of the sequence returned, then looking up `"b"` in the returned map, then getting the third element of the returned vector, then looking up `:c` in the returned map, and then finally calling name on the returned keyword value.
+
+In the above form, you could replace `+>` with either `+>>`, `x>>` or `=>>`, and you will still get the same result. `+>>` is simply the thread-last version of `+>` and `x>>` and `=>>` are transducing and parallel versions of `+>>`.
+
+While path threads are more ergonomic than the classical thread variants, they also have better performance than `get-in` as well.
+## Lambda wrapping
+Path threads also allow you to thread values through anonymous functions, like `#(- 10 % 1)` or `(fn [x] (- 10 x 1))`, without having to wrap them in an extra enclosing set of parenthesis, you can do that with path threads too:
+```clojure
+(x> 10 range rest 2 #(- 10 % 1)) ;=> 6
+```
+Or, extending our prior example:
+```clojure
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
+  (x>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
+```
+This has the added benefit of conveying to the reader that the author intends for the anonymous function to only take one parameter. In the classical thread syntax, the reader would have to scan all the way to the end of `(#(... ` in order to know if an extra parameter is being passed in. This also prevents people from creating unmaintainable abstractions involving the threading of values into a literal lambda definition - a common source of errors.
+## Backwards compatability
+`+>` and `+>>` have the same laziness semantics as `->` and `->>`. So, if you find yourself wanting to migrate a _path thread_ away from a transducer/parallel context, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>>` or `=>>` macros with the `+>>` macro we required in above. Path navigating will continue to work:
+```clojure
+(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
+  (+>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
+```
+You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
+
+As stated above, you can also require `x>>` and `=>>` in from `path.classical` and, in the event you want to revert back to `->>`, you will be able to do that knowing that no one has added any _path thread_ semantics to the thread that would also need to be converted to the classical syntax.
+# `x>>` Auto Transducification
+Why? Well, for one, speed. Observe:
 ```clojure
 (->> (range 10000000)
      (map inc)
@@ -50,7 +84,6 @@ Why? Well, for one, performance:
      (apply +)
      time)
 ```
-
 Returns:
 ```clojure
 "Elapsed time: 8275.319295 msecs"
@@ -86,6 +119,19 @@ Let’s uncomment the `(mapv dec)` that is currently commented out in both the t
 
 First, let's see it with `->>`:
 ```clojure
+(->> (range 10000000)
+     (map inc)
+     (filter odd?)
+     (mapcat #(do [% (dec %)]))
+     (partition-by #(= 0 (mod % 5)))
+     (map (partial apply +))
+     (mapv dec)
+     (map (partial + 10))
+     (map #(do {:temp-value %}))
+     (map :temp-value)
+     (filter even?)
+     (apply +)
+     time)
 "Elapsed time: 6947.00928 msecs"
 44999977000016
 ```
@@ -93,17 +139,33 @@ Hmm, `->>` actually goes faster now, perhaps due to `mapv` removing some lazines
 
 But now, for `x>>`:
 ```clojure
+(x>> (range 10000000)
+     (map inc)
+     (filter odd?)
+     (mapcat #(do [% (dec %)]))
+     (partition-by #(= 0 (mod % 5)))
+     (map (partial apply +))
+     (mapv dec)
+     (map (partial + 10))
+     (map #(do {:temp-value %}))
+     (map :temp-value)
+     (filter even?)
+     (apply +)
+     time)
 "Elapsed time: 3706.701192 msecs"
 44999977000016
 ```
-So we lost some speed due to the boxing, but we’re still doing a worthy bit better than the default thread macro. Point is, if you want to maximize performance, try to align your transducers contiguously.
+So we lost some speed due to the boxing, but we’re still doing a worthy bit better than the default thread macro. So keep in mind, if you want to maximize performance, try to align your transducers contiguously.
 
-Note that `x>` is different than `->` in that if a transducer is passed in, it appears as if it is a thread-last on that transducer form.
+Note that `x>` is different than `->` in that if a transducer is passed in, it appears as if it is a thread-last on that transducer form. `x>` is mostly available for the sake of completeness, as thread-first contexts are usually used for navigating and transforming single values rather than sequences.
 
-## Parallel `=>` & `=>>`
-`injest` also provides parallel versions of `x>` and `x>>`. Instead of using `sequence` on the thread, `=>` and `=>>` leverage `core.async`'s parallel `pipeline` in order to execute _singular or contiguous_ stateless transducers over a pool of threads equal to `(+ 2 your-number-of-cores)`. Remaining consecutive (non-singular) stateful transducers are threaded just like `x>` and `x>>`.
+> In addition to improved speed, transducers also provide improved memory efficiency over finite sequences. So `x>>` may lower your memory usage as well.
+## `=>>` Auto Parallelization
+`injest` provides a parallel version of `x>>` as well. `=>>` leverages Clojure's parallel [`fold`](https://clojuredocs.org/clojure.core.reducers/fold) [reducer](https://clojure.org/reference/reducers#_using_reducers) in order to execute contiguous _or singular_ stateless transducers over a [Fork/Join pool](http://gee.cs.oswego.edu/dl/papers/fj.pdf). Remaining contiguous (non-singular) stateful transducers are `comp`ed and threaded just like `x>>`.
 
-It doesn't work well for small work-loads though, so for demonstration purposes let's augment our above threads:
+`=>>`'s execution groups are partitioned by the length of the sequence passed in divided by 2 plus the number of cores available. For instance, if you have 4 cores and you pass it a sequence of 1000 elements, the execution groups will be 166 elements in length.
+
+It doesn't work well for small workloads though, so for demonstration purposes let's augment our above threads:
 ```clojure
 (require '[clojure.edn :as edn])
 
@@ -195,22 +257,81 @@ Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
      last
      count
      time)
-; "Elapsed time: 2862.172838 msecs"
+; "Elapsed time: 3142.75057 msecs"
 ;=> 234
 ```
-Under 3 seconds. Much, much better!
+Just over 3 seconds. Much, much better!
 
-Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs - a performance increase of 2 times faster for the `x>>` version, to an increase of 10 times faster for the `=>>` version.
+Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs. So, in other words, `=>>` can sometimes be 5 times faster than `x>>` and 10 times faster than `->>`, depending on the shape of your workloads and the number of cores you have available.
+### `|>>` Parallel Pipeline
+`injest` also provides `|>>` - a parallel, transducing thread macro based on Clojure's [`pipeline`](https://clojuredocs.org/clojure.core.async/pipeline). In general, `=>>` should be preferred for most workloads, but `|>>` is available for edge cases where it is more efficient.
 
-In the future I'd like to explore using parallel `folder` instead of `core.async` but this works pretty well.
-## Clojurescript
-In Clojurescript we don't yet have parallel thread macro implementations but for `x>` and `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread, the default threading macro `->>` produces:
+Instead of dividing work into execution groups, a parallelization value of 2 plus the number of available cores are passed to `pipeline` and `core.async` manages everything else under the hood. The thread-overhead costs for `|>>` are much higher than for `=>>` though, so only use it on smaller sequences with extremely heavy workloads.
 ```clojure
+(|>> (range 100)
+     (repeat 10)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     (map x>>work)
+     last
+     count
+     time)
+; "Elapsed time: 3057.507032 msecs"
+;=> 234
+```
+`|>>` actually beat out `=>>` here, but `=>>` usually wins - your milage may vary. Whatever you do, don't use `|>>` on massive sequences with very small workloads on each item. Like, our prior example will take forever to return:
+```clojure
+;; don't run this
+(|>> (range 10000000)
+     (map inc)
+     (filter odd?)
+     (mapcat #(do [% (dec %)]))
+     (partition-by #(= 0 (mod % 5)))
+     (map (partial apply +))
+     (map (partial + 10))
+     (map #(do {:temp-value %}))
+     (map :temp-value)
+     (filter even?)
+     (apply +)
+     time)
+;; does it ever return? idk!
+```
+Whereas `=>>` will complete in about 10 seconds. Worse than `x>>`, but at least it's within the ballpark of usability (and still performs better than `->>`). So use `|>>` with caution and lots of repl'ing.
+## Clojurescript
+In Clojurescript we don't yet have parallel thread macro implementations but for `x>` and `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
+```clojure
+(->> (range 1000000)
+     (map inc)
+     (filter odd?)
+     (mapcat #(do [% (dec %)]))
+     (partition-by #(= 0 (mod % 5)))
+     (map (partial apply +))
+     (map (partial + 10))
+     (map #(do {:temp-value %}))
+     (map :temp-value)
+     (filter even?)
+     (apply +)
+     time)
 "Elapsed time: 3523.186678 msecs"
 50005499994
 ```
 While the `x>>` version produces:
 ```clojure
+(x>> (range 1000000)
+     (map inc)
+     (filter odd?)
+     (mapcat #(do [% (dec %)]))
+     (partition-by #(= 0 (mod % 5)))
+     (map (partial apply +))
+     (map (partial + 10))
+     (map #(do {:temp-value %}))
+     (map :temp-value)
+     (filter even?)
+     (apply +)
+     time)
 "Elapsed time: 574.145888 msecs"
 50005499994
 ```
@@ -218,7 +339,7 @@ That's a _six times_ speedup!
 
 Perhaps that speedup would not be so drastic if we tested both versions in _advanced_ compile mode. Then the difference in speed might come closer to the Clojure version. In any case, this is some very low-hanging performance fruit.
 ## Extending `injest`
-The `injest.state` namespaces provides the `reg-xf!` and `reg-pxf!` macros that can take one or more transducers. Only stateless transducers (or, more precisely, transducers that can be used safely within a parallel `pipeline` context) should be registered with `reg-pxf!`. `injest`'s thread macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
+The `injest.state` namespaces provides the `reg-xf!` and `reg-pxf!` macros that can take one or more transducers. Only stateless transducers (or, more precisely, transducers that can be used safely within a parallel `fold` or `pipeline` context) should be registered with `reg-pxf!`. `injest`'s thread macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
 ```clojure
 (require '[injest.state :as i.s])
 (require '[net.cgrand.xforms :as x])
@@ -248,50 +369,11 @@ In Clojurescript, you can add another Clojure (`*.clj`) namespace to your projec
 ```clojure
 (injest/regxf! 'net.cgrand.xforms/reduce)
 ```
-Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>`, `x>>`, `=>` and `=>>` threads in both your Clojure and Clojurescript namespaces.
-# Extras
-`injest` comes with extra features that allow for more intuitive path navigation, like you're used to with the `(-> m :a :b :c)` idiom. We refer to these as _path threads_. Simply require from the `injest.path` namespace, like so:
-```clojure
-(ns ...
-  (:require [injest.path :refer [+> +>> x> x>> => =>>]]
-   ...
-```
-Ergonomically, path threads provide a semantic superset of the behaviors found in `->` and `->>`. In other words, there is generally nothing you can do with `->` that you can't do with `+>`. All the thread macros in `injest.path` have these path thread semantics.
-## As a replacement for `get-in`
-In path threads, naked integers, strings, booleans and nils in a thread become lookups on the value threading through, making those tokens useful again in threads. You can index into sequences with integers and replace `get`/`get-in` for most cases involving access in heterogeneous nestings:
-```clojure
-(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
-  (x>> m 1 2 "b" 2 :c name)) ;=> "res"
-```
-Here, we're looking up `1` in the map, then getting the third element of the sequence returned, then looking up `"b"` in the returned map, then getting the third element of the returned vector, then looking up `:c` in the returned map, and then finally calling name on the returned keyword value.
-
-Not only is this more ergonomic and has lower cognitive burden no the reader, it has better performance than `get-in` as well.
-## Lambda wrapping
-If you'd like to thread values through anonymous functions, like `#(- 10 % 1)` or `(fn [x] (- 10 x 1))`, without having to wrap them in an extra enclosing set of parenthesis, you can do that with path threads too:
-```clojure
-(x> 10 range rest 2 #(- 10 % 1)) ;=> 6
-```
-Or, extending our prior example:
-```clojure
-(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
-  (x>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
-```
-This has the added benefit of conveying to the reader that the author intends for the anonymous function to only take one parameter. In the classical thread syntax, the reader would have to scan all the way to the end of `(#(... ` in order to know if an extra parameter is being passed in. This also prevents people from creating unmaintainable abstractions involving the threading of values into a literal lambda definition.
-## Backwards compatability
-`+>` and `+>>` have the same laziness semantics as `->` and `->>`. So, if you find yourself wanting to migrate a _path thread_ away from transducers, back to the more lazy semantics, but you want to keep the path navigation semantics, you can simply replace the `x>`, `x>>`, `=>` or `=>>` macro with the corresponding `+>` or `+>>` macro we required in above. Path navigating will continue to work:
-```clojure
-(let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :bob}]}])}]
-  (+>> m 1 2 "b" 2 :c name #(println "hi " % "!"))) ;=> "hi bob!"
-```
-You can also just use `+>` and `+>>` on their own, without the transducifying macros, if you only want the more convenient ergonomics.
-# Future work
-With regards to the parallel transducing threads, I'd like to explore `folder`. There are other avenues of optimization [discussed on clojureverse](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122).
+Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>>` threads in both your Clojure and Clojurescript namespaces.
 # Caveats
 It should be noted as well:
 
-1. Because transducers have different laziness semantics, you can't be as liberal with your consumption, so test on live data before using this as a drop-in replacement for the default thread macros.
-
-2. Some stateful transducers may be optimized for single-threaded performance and may not produce expected results in some multi-threaded scenarios. So proceed with caution around super fancy, stateful, parallel transducers for now.
+* Because transducers have different laziness semantics, you can't be as liberal with your consumption, so test on live data before using this as a drop-in replacement for the default thread macros.
 
 If you have any problems, feature requests or ideas, feel free to drop a note in the issues or discuss it in the clojureverse [thread](https://clojureverse.org/t/x-x-auto-transducifying-thread-macros/8122/9).
 # References
@@ -301,6 +383,7 @@ Some other perfomance-related investigations you may be interested in:
 * [structural](https://github.com/joinr/structural) - efficient destructuring
 
 Inspiration for the lambda wrapping came from this ask.clojure request: [should-the-threading-macros-handle-lambdas](https://ask.clojure.org/index.php/9023/should-the-threading-macros-handle-lambdas)
+Inspiration for the `fold` implementation of `=>>` came from [reborg/parallel](https://github.com/reborg/parallel#ptransduce)'s `p/transduce`
 # License
 
 Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.

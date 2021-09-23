@@ -1,6 +1,7 @@
 (ns injest.impl
   (:require 
    #?(:clj [clojure.core.async :as a :refer [chan to-chan! pipeline <!!]])
+   #?(:clj [clojure.core.reducers :as r])
    [injest.state :as s]
    [injest.util  :as u]))
 
@@ -18,22 +19,28 @@
        (apply comp)))
 
 (defn xfn [xf-group]
-  (fn [args]
-    (sequence
-     (compose-transducer-group xf-group)
-     args)))
+  (let [ts (compose-transducer-group xf-group)]
+    (fn [args]
+      (sequence ts args))))
 
-#?(:cljs (def pxfn xfn)
+#?(:cljs (def fold-xfn xfn)
    :clj
-   (defn pxfn [xf-group]
-     (fn [args]
-       (let [concurrent (+ 2 (.. Runtime getRuntime availableProcessors))
-             results (chan)]
-         (pipeline concurrent
-                   results
-                   (compose-transducer-group xf-group)
-                   (to-chan! args))
-         (<!! (a/into [] results))))))
+   (defn fold-xfn [xf-group]
+     (let [ts (compose-transducer-group xf-group)
+           p (+ 2 (.. Runtime getRuntime availableProcessors))]
+       (fn [args]
+         (let [c (int (/ (count args) p))]
+           (r/fold c (r/monoid into conj) (ts conj) (vec args)))))))
+
+#?(:cljs (def pipeline-xfn xfn)
+   :clj
+   (defn pipeline-xfn [xf-group]
+     (let [p (+ 2 (.. Runtime getRuntime availableProcessors))
+           ts (compose-transducer-group xf-group)]
+       (fn [args]
+         (let [results (chan)]
+           (pipeline p results ts (to-chan! args))
+           (<!! (a/into [] results)))))))
 
 (defn pre-transducify-thread [env minimum-group-size t-fn t-pred thread]
   (->> thread

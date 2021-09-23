@@ -15,7 +15,7 @@
   ;; (reg-xf `x/reduce)
 
   ;; copied from test.clj, recorded times need to be updated for cljs
-  (->> (range 10000000)
+  (->> (range 1000000)
        (map inc)
        (filter odd?)
        (mapcat #(do [% (dec %)]))
@@ -29,7 +29,7 @@
        (apply +)
        time)
 
-  (x>> (range 10000000)
+  (x>> (range 1000000)
        (map inc)
        (filter odd?)
        (mapcat #(do [% (dec %)]))
