@@ -4,7 +4,7 @@
             [org.corfield.build :as bb]))
 
 (def lib 'net.clojars.john/injest)
-(def version "0.1.0-alpha.12")
+(def version "0.1.0-alpha.13")
 #_ ; alternatively, use MAJOR.MINOR.COMMITS:
 (def version (format "1.0.%s" (b/git-count-revs nil)))
 

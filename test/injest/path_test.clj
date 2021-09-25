@@ -32,10 +32,10 @@
            (x>> {0 :a 2 :b}
                 2)))
     (is (= :b
-           (<> {0 :a 2 :b}
+           (=> {0 :a 2 :b}
                2)))
     (is (= :b
-           (<>> {0 :a 2 :b}
+           (=>> {0 :a 2 :b}
                 2)))))
 
 (deftest index-into-vector
@@ -53,10 +53,10 @@
            (x>> [0 2 5]
                 2)))
     (is (= 5
-           (<> [0 2 5]
+           (=> [0 2 5]
                2)))
     (is (= 5
-           (<>> [0 2 5]
+           (=>> [0 2 5]
                 2)))))
 
 (deftest index-into-sequence
@@ -74,10 +74,10 @@
            (x>> '(0 2 5)
                 2)))
     (is (= 5
-           (<> '(0 2 5)
+           (=> '(0 2 5)
                2)))
     (is (= 5
-           (<>> '(0 2 5)
+           (=>> '(0 2 5)
                 2)))))
 
 (deftest lookup-key-by-string-in-map
@@ -95,10 +95,10 @@
            (x>> {0 :a "s" 5}
                 "s")))
     (is (= 5
-           (<> {0 :a "s" 5}
+           (=> {0 :a "s" 5}
                "s")))
     (is (= 5
-           (<>> {0 :a "s" 5}
+           (=>> {0 :a "s" 5}
                 "s")))))
 
 (deftest lookup-key-by-key-in-map
@@ -116,10 +116,10 @@
            (x>> {0 :a :k 5}
                 :k)))
     (is (= 5
-           (<> {0 :a :k 5}
+           (=> {0 :a :k 5}
                :k)))
     (is (= 5
-           (<>> {0 :a :k 5}
+           (=>> {0 :a :k 5}
                 :k)))))
 
 (deftest lookup-key-by-nil-in-map
@@ -137,10 +137,10 @@
            (x>> {0 :a nil 5}
                 nil)))
     (is (= 5
-           (<> {0 :a nil 5}
+           (=> {0 :a nil 5}
                nil)))
     (is (= 5
-           (<>> {0 :a nil 5}
+           (=>> {0 :a nil 5}
                 nil)))))
 
 (deftest lookup-key-by-boolean-in-map
@@ -158,10 +158,10 @@
            (x>> {0 :a true 5}
                 true)))
     (is (= 5
-           (<> {0 :a true 5}
+           (=> {0 :a true 5}
                true)))
     (is (= 5
-           (<>> {0 :a true 5}
+           (=>> {0 :a true 5}
                 true)))))
 
 (deftest lamda-wrapping
@@ -179,10 +179,10 @@
            (x>> 1
                 #(- 10 (+ % 1)))))
     (is (= 8
-           (<> 1
+           (=> 1
                #(- 10 (+ % 1)))))
     (is (= 8
-           (<>> 1
+           (=>> 1
                 #(- 10 (+ % 1)))))))
 
 (deftest all-thread-features
@@ -201,10 +201,10 @@
              (x>> m 1 2 "b" 2 :c true nil name #(str "hi " % "!")))))
     (is (= "hi bob!"
            (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c {true {nil :bob}}}]}])}]
-             (<> m 1 2 "b" 2 :c true nil name #(str "hi " % "!")))))
+             (=> m 1 2 "b" 2 :c true nil name #(str "hi " % "!")))))
     (is (= "hi bob!"
            (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c {true {nil :bob}}}]}])}]
-             (<>> m 1 2 "b" 2 :c true nil name #(str "hi " % "!")))))))
+             (=>> m 1 2 "b" 2 :c true nil name #(str "hi " % "!")))))))
 
 (deftest thread-last-transducers
   (testing "exercise thread-last macros"
@@ -233,7 +233,7 @@
                 (filter even?)
                 (apply +))))
     (is (= 1044
-           (<>> (range 100)
+           (=>> (range 100)
                 (map inc)
                 (filter odd?)
                 (mapcat #(do [% (dec %)]))

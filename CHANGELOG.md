@@ -1,7 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [unreleased] - 2021-09-20
+## [0.1.0-alpha.13] - 2021-09-25
+- reverted names back to `=>>` and `|>>`
+- fixed bug with `=>>` fold impl, limiting smallest partition to parallelism count
+
+## [0.1.0-alpha.12] - 2021-09-22
 - Added tests
 - Adopted Sean Corfield's deps-new lib template
 
@@ -10,3 +14,4 @@ All notable changes to this project will be documented in this file. This change
 - Major code cleanup
 
 [0.1.0-alpha.9]: https://github.com/johnmn3/injest/compare/v0.1-alpha.8...v0.1-alpha.9
+[0.1.0-alpha.9]: https://github.com/johnmn3/injest/compare/v0.1-alpha.9...0.1.0-alpha.13

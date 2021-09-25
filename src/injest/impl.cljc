@@ -29,8 +29,9 @@
      (let [ts (compose-transducer-group xf-group)
            p (+ 2 (.. Runtime getRuntime availableProcessors))]
        (fn [args]
-         (let [c (int (/ (count args) p))]
-           (r/fold c (r/monoid into conj) (ts conj) (vec args)))))))
+         (let [c (int (/ (count args) p))
+               p-size (if (< c p) p c)]
+           (r/fold p-size (r/monoid into conj) (ts conj) (vec args)))))))
 
 #?(:cljs (def pipeline-xfn xfn)
    :clj
