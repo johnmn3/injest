@@ -32,7 +32,7 @@
          (let [c (int (/ (count args) p))
                p-size (if (< c p) p c)]
            (r/fold p-size (r/monoid into conj) (ts conj) (vec args)))))))
-
+(macroexpand-1 '(partial inc))
 #?(:cljs (def pipeline-xfn xfn)
    :clj
    (defn pipeline-xfn [xf-group]
@@ -67,8 +67,10 @@
 
   :end)
 
+(def protected-fns #{'fn 'fn* 'partial})
+
 (defn path-> [form x]
-  (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
+  (cond (and (seq? form) (not (protected-fns (first form))))
         (with-meta `(~(first form) ~x ~@(next form)) (meta form))
         (or (string? form) (nil? form) (boolean? form))
         (list x form)
@@ -78,7 +80,7 @@
         (list form x)))
 
 (defn path->> [form x]
-  (cond (and (seq? form) (not (#{'fn 'fn*} (first form))))
+  (cond (and (seq? form) (not (protected-fns (first form))))
         (with-meta `(~(first form) ~@(next form) ~x) (meta form))
         (or (string? form) (nil? form) (boolean? form))
         (list x form)
