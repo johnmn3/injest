@@ -46,7 +46,7 @@ Here, we're looking up `1` in the map, then getting the third element of the seq
 
 In the above form, you could replace `+>` with either `+>>`, `x>>` or `=>>`, and you will still get the same result. `+>>` is simply the thread-last version of `+>` and `x>>` and `=>>` are transducing and parallel versions of `+>>`.
 ## Lambda wrapping
-Path threads allow you to thread values through anonymous functions, like `#(- 10 % 1)` or `(fn [x] (- 10 x 1))`, without having to wrap them in an extra enclosing set of parenthesis, you can do that with path threads too:
+Path threads allow you to thread values through anonymous functions, like `#(- 10 % 1)` or `(fn [x] (- 10 x 1))`, without having to wrap them in an extra enclosing set of parenthesis:
 ```clojure
 (x> 10 range rest 2 #(- 10 % 1)) ;=> 6
 ```
@@ -155,9 +155,7 @@ But now, for `x>>`:
 ```
 So we lost some speed due to the boxing, but we’re still doing a worthy bit better than the default thread macro. So keep in mind, if you want to maximize performance, try to align your transducers contiguously.
 
-Note that `x>` is different than `->` in that if a transducer is passed in, it appears as if it is a thread-last on that transducer form. `x>` is mostly available for the sake of completeness, as thread-first contexts are usually used for navigating and transforming single values rather than sequences.
-
-> In addition to improved speed, transducers also provide improved memory efficiency over finite sequences. So `x>>` may lower your memory usage as well.
+> Note: In addition to improved speed, transducers also provide improved memory efficiency over finite sequences. So `x>>` may lower your memory usage as well.
 ## `=>>` Auto Parallelization
 `injest` provides a parallel version of `x>>` as well. `=>>` leverages Clojure's parallel [`fold`](https://clojuredocs.org/clojure.core.reducers/fold) [reducer](https://clojure.org/reference/reducers#_using_reducers) in order to execute contiguous _or singular_ stateless transducers over a [Fork/Join pool](http://gee.cs.oswego.edu/dl/papers/fj.pdf). Remaining contiguous (non-singular) stateful transducers are `comp`ed and threaded just like `x>>`.
 
@@ -264,7 +262,7 @@ Again, in local dev your times may look a bit different. On my Macbook Pro here,
 ### `|>>` Parallel Pipeline
 `injest` also provides `|>>` - a parallel, transducing thread macro based on Clojure's [`pipeline`](https://clojuredocs.org/clojure.core.async/pipeline). In general, `=>>` should be preferred for most workloads, but `|>>` is available for edge cases where it is more efficient.
 
-Instead of dividing work into execution groups, a parallelization value of 2 plus the number of available cores are passed to `pipeline` and `core.async` manages everything else under the hood. The thread-overhead costs for `|>>` are much higher than for `=>>` though, so only use it on smaller sequences with extremely heavy workloads.
+Instead of dividing work into execution groups, a parallelization value of 2 plus the number of available cores are passed to `pipeline` and `core.async` manages everything else under the hood. The thread-overhead costs for `|>>` are different than `=>>` though, so only use it on sequences with heavy workloads.
 ```clojure
 (|>> (range 100)
      (repeat 10)
@@ -280,7 +278,7 @@ Instead of dividing work into execution groups, a parallelization value of 2 plu
 ; "Elapsed time: 3057.507032 msecs"
 ;|> 234
 ```
-`|>>` actually beat out `=>>` here, but `=>>` usually wins - your milage may vary. Whatever you do, don't use `|>>` on massive sequences with very small workloads on each item. Like, our prior example will take forever to return:
+`|>>` actually beat out `=>>` here, but `=>>` usually wins - your milage may vary. Whatever you do, don't use `|>>` on massive sequences with very small workloads on each item. This causes a traffic jam:
 ```clojure
 ;; don't run this
 (|>> (range 10000000)
@@ -297,7 +295,7 @@ Instead of dividing work into execution groups, a parallelization value of 2 plu
      time)
 ;; takes 3 minutes :/
 ```
-Whereas `=>>` will complete in about 10 seconds. Worse than `x>>`, but at least it's within the ballpark of usability. So use `|>>` with caution and lots of repl'ing.
+Whereas `=>>` will complete in about 10 seconds. Worse than `x>>` for the same sequence and workload, but at least it's within the ballpark of usability. And `=>>` just has better execution semantics when used in chains with other transducers. So use `|>>` with caution and lots of repl'ing.
 ## Clojurescript
 In Clojurescript we don't yet have parallel thread macro implementations but for `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
 ```clojure
@@ -365,9 +363,9 @@ Even better!
 ```
 In Clojurescript, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
 ```clojure
-(injest/regxf! 'net.cgrand.xforms/reduce)
+(i.s/regxf! 'net.cgrand.xforms/reduce)
 ```
-Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(injest/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>>` threads in both your Clojure and Clojurescript namespaces.
+Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(i.s/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>>` threads in both your Clojure and Clojurescript namespaces.
 # Caveats
 It should be noted as well:
 
