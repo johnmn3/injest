@@ -296,6 +296,8 @@ Instead of dividing work into execution groups, a parallelization value of 2 plu
 ;; takes 3 minutes :/
 ```
 Whereas `=>>` will complete in about 10 seconds. Worse than `x>>` for the same sequence and workload, but at least it's within the ballpark of usability. And `=>>` just has better execution semantics when used in chains with other transducers. So use `|>>` with caution and lots of repl'ing.
+
+For a more in depth comparative analysis of `|>>` and `=>>` check out the [shootout](https://github.com/johnmn3/injest/blob/main/docs/shootout.md) docs.
 ## Clojurescript
 In Clojurescript we don't yet have parallel thread macro implementations but for `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
 ```clojure
