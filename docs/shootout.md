@@ -272,3 +272,81 @@ On 16 cores:
 And that issue only compounds as the sequence size rises.
 
 So, let's be honest: at least half of the sequence transformation threads that we usually build with `->>` in Clojure are _not_ homogenous, heavily loaded threads. So, if a given thread is only _just starting_ to seem like it could benefit from parallelization, then it's a good chance that `|>>` will be a footgun for you, while `=>>` may pay dividends - so in general I recommend reaching for `=>>` first. However, once your threads' workloads starts to become _embarrasingly parallel_, then it makes sense to try out `|>>`, to see if it can get you even farther - especially with more available cores.
+
+I know, you're wondering, what do these tests look like against the single threaded transducing `x>>` and classical, lazy `->>` macros?
+
+Let's add a test case for that:
+```clojure
+(defn lazy-work [n]
+  (time-val
+   (->> (range n)
+        (mapv (fn [_]
+                (->> (range n)
+                     (map inc)
+                     (filter odd?)
+                     (mapcat #(do [% (dec %)]))
+                     (partition-by #(= 0 (mod % 5)))
+                     (map (partial apply +))
+                     (map (partial + 10))
+                     (map #(do {:temp-value %}))
+                     (map :temp-value)
+                     (filter even?)
+                     (apply +)))))))
+
+(defn run-x>> [l w]
+  (x>> (range l)
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))
+       (map (fn [_] (work w)))))
+
+(defn run-->> [l w]
+  (->> (range l)
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))
+       (map (fn [_] (lazy-work w)))))
+```
+Now, looking at our "medium" sized work load above:
+```clojure
+(dotimes [n 10]
+  (println (time-val (last (run-x>> 100 (* n 100))))))
+;; and 
+(dotimes [n 10]
+  (println (time-val (last (run-->> 100 (* n 100))))))
+```
+And adding those to our times, we get:
+
+On 4 cores:
+
+<img width="600" alt="Screen Shot 13" src="https://user-images.githubusercontent.com/127271/134789493-d80f346e-0236-4598-81d9-a6e1fc3b9519.png">
+
+On 16 cores:
+
+<img width="600" alt="Screen Shot 14" src="https://user-images.githubusercontent.com/127271/134789521-43138f38-b856-42c9-a3ad-2482a8d55c4b.png">
+
+As you can see, it would have taken a _very_ long time for the lazy version to ever finish all ten iterations.
