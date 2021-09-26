@@ -350,3 +350,23 @@ On 16 cores:
 <img width="600" alt="Screen Shot 14" src="https://user-images.githubusercontent.com/127271/134789521-43138f38-b856-42c9-a3ad-2482a8d55c4b.png">
 
 As you can see, it would have taken a _very_ long time for the lazy version to ever finish all ten iterations.
+
+Let's see it with the small sequence, large work version:
+```clojure
+(dotimes [n 4]
+  (println (time-val (last (run-x>> 10 (* n 1000))))))
+;; and 
+(dotimes [n 4]
+  (println (time-val (last (run-->> 10 (* n 1000))))))
+```
+On 4 cores:
+
+<img width="600" alt="Screen Shot 15" src="https://user-images.githubusercontent.com/127271/134791007-6e06797b-3545-4dd7-aa0e-e7f970ab3fd9.png">
+
+On 16 cores:
+
+<img width="600" alt="Screen Shot 16" src="https://user-images.githubusercontent.com/127271/134790484-43f51335-4369-4255-b774-e9b572894c81.png">
+
+Aha!, We've discovered that `=>>` is breaking for _very_ small sequences (here 10). But only when it is shorter than the number of cores - in this case, in the 16 core version being greater than the number of items available in the sequence. We'll see if we can optimize this in our parallelism strategy.
+
+Let's see how these comparisons fair in the very large sequence cases:
