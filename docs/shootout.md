@@ -370,3 +370,19 @@ On 16 cores:
 Aha!, We've discovered that `=>>` is breaking for _very_ small sequences (here 10). But only when it is shorter than the number of cores - in this case, in the 16 core version being greater than the number of items available in the sequence. We'll see if we can optimize this in our parallelism strategy.
 
 Let's see how these comparisons fair in the very large sequence cases:
+
+> todo
+
+Now let's see the case of an extremely large sequence with heterogeneous data and work:
+
+On 4 cores:
+
+<img width="600" alt="Screen Shot 17" src="https://user-images.githubusercontent.com/127271/134792060-8340328b-5f40-4155-9006-d1d2d4b339b7.png">
+
+On 16 cores:
+
+<img width="600" alt="Screen Shot 18" src="https://user-images.githubusercontent.com/127271/134792097-45bffd87-7770-4689-8bda-a0d0f6cbb567.png">
+
+Here we can see that, with this kind of workload, the best we can do is try to keep up with the single threaded transducer version - which the `=>>` version does a pretty good job of.
+
+
