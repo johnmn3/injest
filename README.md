@@ -4,6 +4,9 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 [Transducers](https://clojure.org/reference/transducers) are great for performing sequence transformations efficiently. `x>>` combines the efficiency of transducers with the better ergonomics of `+>>`. Thread performance can be further extended by automatically parallelizing work with `=>>`.
 
 `injest` macros achieve this by scanning forms for contiguous groups of transducers and `comp`ing them together into a function that either `sequence`s or parallel `fold`s the values flowing in the thread through the transducers.
+
+[![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://clojurians.zulipchat.com/#streams/302003/injest)
+
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
@@ -383,6 +386,11 @@ Some other perfomance-related investigations you may be interested in:
 Inspiration for the lambda wrapping came from this ask.clojure request: [should-the-threading-macros-handle-lambdas](https://ask.clojure.org/index.php/9023/should-the-threading-macros-handle-lambdas)
 
 Inspiration for the `fold` implementation of `=>>` came from [reborg/parallel](https://github.com/reborg/parallel#ptransduce)'s `p/transduce`
+
+# Get Involved
+
+Want to implement the `somex>>` macro? Just copy how I did it and feel free to submit a PR. If you see a difficiency, file an issue here or swing by and join the discussion on the [zulip channel](https://clojurians.zulipchat.com/#streams/302003/injest).
+
 # License
 
 Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
