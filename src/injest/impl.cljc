@@ -30,7 +30,7 @@
            p (+ 2 (.. Runtime getRuntime availableProcessors))]
        (fn [args]
          (let [c (int (/ (count args) p))
-               p-size (if (< c 32) 1 c)]
+               p-size (if (< c 32) 1 (max c 32))]
            (r/fold p-size (r/monoid into conj) (ts conj) (vec args)))))))
 
 #?(:cljs (def pipeline-xfn xfn)
