@@ -1,5 +1,5 @@
 (ns injest.impl
-  (:require 
+  (:require
    #?(:clj [clojure.core.async :as a :refer [chan to-chan! pipeline <!!]])
    #?(:clj [clojure.core.reducers :as r])
    [injest.state :as s]
@@ -30,9 +30,9 @@
            p (+ 2 (.. Runtime getRuntime availableProcessors))]
        (fn [args]
          (let [c (int (/ (count args) p))
-               p-size (if (< c p) p c)]
+               p-size (if (< c 32) 1 c)]
            (r/fold p-size (r/monoid into conj) (ts conj) (vec args)))))))
-(macroexpand-1 '(partial inc))
+
 #?(:cljs (def pipeline-xfn xfn)
    :clj
    (defn pipeline-xfn [xf-group]
