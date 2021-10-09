@@ -1,0 +1,8 @@
+{:lint-as {injest.path/+> clojure.core/->
+           injest.path/+>> clojure.core/->>
+           injest.path/x> clojure.core/->
+           injest.path/x>> clojure.core/->>
+           injest.path/=> clojure.core/->
+           injest.path/=>> clojure.core/->>
+           injest.path/|> clojure.core/->
+           injest.path/|>> clojure.core/->>}}
