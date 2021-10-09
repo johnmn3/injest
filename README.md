@@ -1,11 +1,14 @@
 # `injest`: `+>` `+>>` `x>>` `=>>`
+
+[![Clojars Project](https://img.shields.io/clojars/v/net.clojars.john/injest.svg)](https://clojars.org/net.clojars.john/injest)
+[![Cljdoc](https://cljdoc.org/badge/net.clojars.john/injest)](https://cljdoc.org/d/net.clojars.john/injest)
+[![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://clojurians.zulipchat.com/#streams/302003/injest)
+
 Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `->` and `->>` [thrushes](http://blog.fogus.me/2010/09/28/thrush-in-clojure-redux/)) are great for navigating into data and transforming sequences. `injest`'s [_path thread_](#path-threads) macros `+>` and `+>>` are just like `->` and `->>` but with expanded path navigating abilities similar to `get-in`.
 
 [Transducers](https://clojure.org/reference/transducers) are great for performing sequence transformations efficiently. `x>>` combines the efficiency of transducers with the better ergonomics of `+>>`. Thread performance can be further extended by automatically parallelizing work with `=>>`.
 
 `injest` macros achieve this by scanning forms for transducers and `comp`ing them together into a function that either `sequence`s or parallel `fold`s the values flowing in the thread through the transducers.
-
-[![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://clojurians.zulipchat.com/#streams/302003/injest)
 
 ## Getting Started
 Place the following in the `:deps` map of your `deps.edn` file:
