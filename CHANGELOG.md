@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.1.0-alpha.22] - 2021-10-09
+- add lint defs for clj-kondo
+- remove .devcontainer
+
 ## [0.1.0-alpha.15] - 2021-10-02
 - fix bug in `=>>` with small sequences
 - more docks and docs/shootout.md

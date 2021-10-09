@@ -15,7 +15,7 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  net.clojars.john/injest {:mvn/version "0.1.0-alpha.21"}
+  net.clojars.john/injest {:mvn/version "0.1.0-alpha.22"}
   ...
 ```
 ### clj-kondo
@@ -30,7 +30,7 @@ To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop thi
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.21"}
+      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.22"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
