@@ -5,6 +5,10 @@
 
 (def lib 'net.clojars.john/injest)
 (def version "0.1.0-alpha.19")
+
+;; clojure -T:build ci
+;; clojure -T:build deploy
+
 #_ ; alternatively, use MAJOR.MINOR.COMMITS:
 (def version (format "1.0.%s" (b/git-count-revs nil)))
 (def url "https://github.com/johnmn3/injest")

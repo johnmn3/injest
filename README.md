@@ -11,12 +11,21 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 `injest` macros achieve this by scanning forms for transducers and `comp`ing them together into a function that either `sequence`s or parallel `fold`s the values flowing in the thread through the transducers.
 
 ## Getting Started
+### deps.edn
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
   net.clojars.john/injest {:mvn/version "0.1.0-alpha.19"}
   ...
 ```
+### clj-kondo
+Make clj-kondo/Clojure-LSP aware of `injest` by adding `"net.clojars.john/injest"` to the `:config-paths` vector of your `.clj-kondo/config.edn` file:
+```clojure
+{:config-paths ["net.clojars.john/injest"]}
+```
+This will automatically import `injest`'s lint definitions in Calva and other IDE's that leverage clj-kondo and/or Clojure-LSP.
+
+### Quickstart
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
@@ -25,6 +34,7 @@ clj -Sdeps \
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
+### Requiring
 Then require the `injest` macros in your project:
 ```clojure
 (ns ...
