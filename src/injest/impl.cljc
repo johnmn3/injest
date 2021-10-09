@@ -26,12 +26,9 @@
 #?(:cljs (def fold-xfn xfn)
    :clj
    (defn fold-xfn [xf-group]
-     (let [ts (compose-transducer-group xf-group)
-           p (+ 2 (.. Runtime getRuntime availableProcessors))]
+     (let [ts (compose-transducer-group xf-group)]
        (fn [args]
-         (let [c (int (/ (count args) p))
-               p-size (if (< c 32) 1 (max c 32))]
-           (r/fold p-size (r/monoid into conj) (ts conj) (vec args)))))))
+         (r/fold 512 (r/monoid into conj) (ts conj) (vec args))))))
 
 #?(:cljs (def pipeline-xfn xfn)
    :clj

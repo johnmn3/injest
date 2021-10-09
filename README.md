@@ -3,7 +3,7 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 
 [Transducers](https://clojure.org/reference/transducers) are great for performing sequence transformations efficiently. `x>>` combines the efficiency of transducers with the better ergonomics of `+>>`. Thread performance can be further extended by automatically parallelizing work with `=>>`.
 
-`injest` macros achieve this by scanning forms for contiguous groups of transducers and `comp`ing them together into a function that either `sequence`s or parallel `fold`s the values flowing in the thread through the transducers.
+`injest` macros achieve this by scanning forms for transducers and `comp`ing them together into a function that either `sequence`s or parallel `fold`s the values flowing in the thread through the transducers.
 
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://clojurians.zulipchat.com/#streams/302003/injest)
 
@@ -11,14 +11,14 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  net.clojars.john/injest {:mvn/version "0.1.0-alpha.15"}
+  net.clojars.john/injest {:mvn/version "0.1.0-alpha.17"}
   ...
 ```
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.15"}
+      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.17"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -160,7 +160,7 @@ So we lost some speed due to the boxing, but we’re still doing a worthy bit be
 
 > Note: In addition to improved speed, transducers also provide improved memory efficiency over finite sequences. So `x>>` may lower your memory usage as well.
 ## `=>>` Auto Parallelization
-`injest` provides a parallel version of `x>>` as well. `=>>` leverages Clojure's parallel [`fold`](https://clojuredocs.org/clojure.core.reducers/fold) [reducer](https://clojure.org/reference/reducers#_using_reducers) in order to execute contiguous _or singular_ stateless transducers over a [Fork/Join pool](http://gee.cs.oswego.edu/dl/papers/fj.pdf). Remaining contiguous (non-singular) stateful transducers are `comp`ed and threaded just like `x>>`.
+`injest` provides a parallel version of `x>>` as well. `=>>` leverages Clojure's parallel [`fold`](https://clojuredocs.org/clojure.core.reducers/fold) [reducer](https://clojure.org/reference/reducers#_using_reducers) in order to execute stateless transducers over a [Fork/Join pool](http://gee.cs.oswego.edu/dl/papers/fj.pdf). Remaining stateful transducers are `comp`ed and threaded just like `x>>`.
 
 `=>>`'s execution groups are partitioned by the length of the sequence passed in divided by 2 plus the number of cores available. For instance, if you have 4 cores and you pass it a sequence of 1000 elements, the execution groups will be 166 elements in length.
 
