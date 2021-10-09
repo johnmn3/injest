@@ -211,7 +211,7 @@
   (let [m {1 (rest ['ignore0 0 1 {"b" [0 1 {:c :res}]}])}]
     (+>> m 1 2 "b" 2 :c name)) ;=> "res"
 
-  (x>> (range 10000000)
+  (x>> (range 1000000)
        (map inc)
        (filter odd?)
        (mapcat #(do [% (dec %)]))
@@ -223,5 +223,7 @@
        (filter even?)
        (apply +)
        time)
+  ;; "Elapsed time: 6735.604664 msecs"
+  ;; 5000054999994
 
   :end)
