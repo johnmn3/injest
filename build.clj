@@ -4,7 +4,7 @@
             [org.corfield.build :as bb]))
 
 (def lib 'net.clojars.john/injest)
-(def version "0.1.0-alpha.20")
+(def version "0.1.0-alpha.21")
 
 ;; clojure -T:build ci
 ;; clojure -T:build deploy
