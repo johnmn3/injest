@@ -6,16 +6,22 @@
    [injest.util  :as u]))
 
 (defn transducable? [form]
-  (when (sequential? form)
-    (->> form first (contains? @s/transducables))))
+  (or (= form cat)
+      (when (sequential? form)
+        (->> form first (contains? @s/transducables)))))
 
 (defn par-transducable? [form]
-  (when (sequential? form)
-    (->> form first (contains? @s/par-transducables))))
+  (or (= form cat)
+      (when (sequential? form)
+        (->> form first (contains? @s/par-transducables)))))
 
 (defn compose-transducer-group [xfs]
   (->> xfs
-       (map #(apply (first %) (rest %)))
+       (map #(if-not (coll? %)
+               %
+               (if (= 1 (count %))
+                 (first %)
+                 (apply (first %) (rest %)))))
        (apply comp)))
 
 (defn xfn [xf-group]
@@ -64,7 +70,7 @@
 
   :end)
 
-(def protected-fns #{'fn 'fn* 'partial})
+(def protected-fns #{`fn 'fn 'fn* 'partial})
 
 (defn path-> [form x]
   (cond (and (seq? form) (not (protected-fns (first form))))

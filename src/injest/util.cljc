@@ -28,7 +28,9 @@
 (defn qualify-thread [env thread]
   (mapv
    (fn w [x]
-     (if (and (list? x) (symbol? (first x)))
-       (-> x first (qualify-form env) (concat (rest x)))
-       x))
+     (if (= x 'cat)
+       (qualify-form x env)
+       (if (and (list? x) (symbol? (first x)) (not (#{'fn 'fn*} (first x))))
+         (-> x first (qualify-form env) (concat (rest x)))
+         x)))
    thread))

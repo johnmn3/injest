@@ -15,7 +15,7 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  net.clojars.john/injest {:mvn/version "0.1.0-alpha.22"}
+  net.clojars.john/injest {:mvn/version "0.1.0-alpha.23"}
   ...
 ```
 ### clj-kondo
@@ -30,7 +30,7 @@ To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop thi
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.22"}
+      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.23"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -174,8 +174,6 @@ So we lost some speed due to the boxing, but we’re still doing a worthy bit be
 > Note: In addition to improved speed, transducers also provide improved memory efficiency over finite sequences. So `x>>` may lower your memory usage as well.
 ## `=>>` Auto Parallelization
 `injest` provides a parallel version of `x>>` as well. `=>>` leverages Clojure's parallel [`fold`](https://clojuredocs.org/clojure.core.reducers/fold) [reducer](https://clojure.org/reference/reducers#_using_reducers) in order to execute stateless transducers over a [Fork/Join pool](http://gee.cs.oswego.edu/dl/papers/fj.pdf). Remaining stateful transducers are `comp`ed and threaded just like `x>>`.
-
-`=>>`'s execution groups are partitioned by the length of the sequence passed in divided by 2 plus the number of cores available. For instance, if you have 4 cores and you pass it a sequence of 1000 elements, the execution groups will be 166 elements in length.
 
 It doesn't work well for small workloads though, so for demonstration purposes let's augment our above threads:
 ```clojure
@@ -379,7 +377,7 @@ Even better!
 "Elapsed time: 2889.771067 msecs"
 5000054999994
 ```
-In Clojurescript, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and expclicitly namespaced symbols.
+In Clojurescript, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and explicitly namespaced symbols.
 ```clojure
 (i.s/regxf! 'net.cgrand.xforms/reduce)
 ```

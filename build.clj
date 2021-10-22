@@ -1,16 +1,13 @@
 (ns build
   (:refer-clojure :exclude [test])
-  (:require [clojure.tools.build.api :as b] ; for b/git-count-revs
-            [org.corfield.build :as bb]))
+  (:require [org.corfield.build :as bb]))
 
 (def lib 'net.clojars.john/injest)
-(def version "0.1.0-alpha.22")
+(def version "0.1.0-alpha.23")
 
 ;; clojure -T:build ci
 ;; clojure -T:build deploy
 
-#_ ; alternatively, use MAJOR.MINOR.COMMITS:
-(def version (format "1.0.%s" (b/git-count-revs nil)))
 (def url "https://github.com/johnmn3/injest")
 
 (def scm {:url url

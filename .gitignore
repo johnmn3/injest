@@ -18,3 +18,4 @@ linux-install-*
 .clj-kondo/.cache
 .clj-kondo/net.clojars.john
 .lsp
+out

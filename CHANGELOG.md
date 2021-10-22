@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.1.0-alpha.23] - 2021-10-22
+- enable `cat` 
+- fix cljs
+- update docs
+
 ## [0.1.0-alpha.22] - 2021-10-09
 - add lint defs for clj-kondo
 - remove .devcontainer
