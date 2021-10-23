@@ -1,8 +1,28 @@
-{:lint-as {injest.path/+> clojure.core/->
+{:lint-as {injest.core/x>  clojure.core/->
+           injest.core/x>> clojure.core/->>
+           injest.core/=>  clojure.core/->
+           injest.core/=>> clojure.core/->>
+           injest.core/|>  clojure.core/->
+           injest.core/|>> clojure.core/->>
+
+           injest.path/+>  clojure.core/->
            injest.path/+>> clojure.core/->>
-           injest.path/x> clojure.core/->
+           injest.path/x>  clojure.core/->
            injest.path/x>> clojure.core/->>
-           injest.path/=> clojure.core/->
+           injest.path/=>  clojure.core/->
            injest.path/=>> clojure.core/->>
-           injest.path/|> clojure.core/->
-           injest.path/|>> clojure.core/->>}}
+           injest.path/|>  clojure.core/->
+           injest.path/|>> clojure.core/->>}
+
+ :hooks {:macroexpand {injest.path/+>  injest.path/+>
+                       injest.path/+>> injest.path/+>>
+                       injest.path/x>  injest.path/+>
+                       injest.path/x>> injest.path/+>>
+                       injest.path/=>  injest.path/+>
+                       injest.path/=>> injest.path/+>>}}
+
+ :linters {:injest.path/+> {:level :error}
+           :injest.path/+>> {:level :error}
+           :unused-binding {:level :off}}
+ 
+ }

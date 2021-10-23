@@ -15,7 +15,7 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  net.clojars.john/injest {:mvn/version "0.1.0-alpha.23"}
+  net.clojars.john/injest {:mvn/version "0.1.0-alpha.24"}
   ...
 ```
 ### clj-kondo
@@ -30,7 +30,7 @@ To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop thi
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.23"}
+      {net.clojars.john/injest {:mvn/version "0.1.0-alpha.24"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -273,45 +273,8 @@ Just over 6 seconds. Much better. Now let's try the parallel `=>>` version:
 Just over 3 seconds. Much, much better!
 
 Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs. So, in other words, `=>>` can sometimes be 5 times faster than `x>>` and 10 times faster than `->>`, depending on the shape of your workloads and the number of cores you have available.
-### `|>>` Parallel Pipeline
-`injest` also provides `|>>` - a parallel, transducing thread macro based on Clojure's [`pipeline`](https://clojuredocs.org/clojure.core.async/pipeline). In general, `=>>` should be preferred for most workloads, but `|>>` is available for edge cases where it is more efficient.
 
-Instead of dividing work into execution groups, a parallelization value of 2 plus the number of available cores are passed to `pipeline` and `core.async` manages everything else under the hood. The thread-overhead costs for `|>>` are different than `=>>` though, so only use it on sequences with heavy workloads.
-```clojure
-(|>> (range 100)
-     (repeat 10)
-     (map x>>work)
-     (map x>>work)
-     (map x>>work)
-     (map x>>work)
-     (map x>>work)
-     (map x>>work)
-     last
-     count
-     time)
-; "Elapsed time: 3057.507032 msecs"
-;|> 234
-```
-`|>>` actually beat out `=>>` here, but `=>>` usually wins - your milage may vary. Whatever you do, don't use `|>>` on massive sequences with very small workloads on each item. This causes a traffic jam:
-```clojure
-;; don't run this
-(|>> (range 10000000)
-     (map inc)
-     (filter odd?)
-     (mapcat #(do [% (dec %)]))
-     (partition-by #(= 0 (mod % 5)))
-     (map (partial apply +))
-     (map (partial + 10))
-     (map #(do {:temp-value %}))
-     (map :temp-value)
-     (filter even?)
-     (apply +)
-     time)
-;; takes 3 minutes :/
-```
-Whereas `=>>` will complete in about 10 seconds. Worse than `x>>` for the same sequence and workload, but at least it's within the ballpark of usability. And `=>>` just has better execution semantics when used in chains with other transducers. So use `|>>` with caution and lots of repl'ing.
-
-For a more in depth comparative analysis of `|>>` and `=>>` check out the [shootout](https://github.com/johnmn3/injest/blob/main/docs/shootout.md) docs.
+> There is also a parallel thread macro (`|>>`) that uses `core.async/pipeline` for parallelization. It's still available for folks interested in improving it, but is not recomended for general use. `=>>` performs better in most cases. A soon-to-be-updated analysis ([shootout.md](https://github.com/johnmn3/injest/blob/main/docs/shootout.md)) compares the differences between `|>>` and `=>>`. 
 ## Clojurescript
 In Clojurescript we don't yet have parallel thread macro implementations but for `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
 ```clojure
@@ -379,9 +342,9 @@ Even better!
 ```
 In Clojurescript, you can add another Clojure (`*.clj`) namespace to your project and register there with the `regxf!` function and explicitly namespaced symbols.
 ```clojure
-(i.s/regxf! 'net.cgrand.xforms/reduce)
+(i.s/regxf! 'my.cljs.xforms.library/sliding-window)
 ```
-Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(i.s/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>>` threads in both your Clojure and Clojurescript namespaces.
+Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(i.s/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>>`/`=>>` threads in both your Clojure and Clojurescript namespaces.
 # Caveats
 It should be noted as well:
 

@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.1.0-alpha.24] - 2021-10-23
+- improve linter
+- update docs
+
 ## [0.1.0-alpha.23] - 2021-10-22
 - enable `cat` 
 - fix cljs
