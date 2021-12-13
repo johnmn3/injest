@@ -172,6 +172,12 @@ But now, for `x>>`:
 So we lost some speed due to the boxing, but we’re still doing a worthy bit better than the default thread macro. So keep in mind, if you want to maximize performance, try to align your transducers contiguously.
 
 > Note: In addition to improved speed, transducers also provide improved memory efficiency over finite sequences. So `x>>` may lower your memory usage as well.
+
+### Available Transducers
+| These are the core functions that are available to use as transducers in a `x>>` thread-last: |
+| --- |
+| `take-nth`, `disj!`, `dissoc!`, `distinct`, `keep-indexed`, `random-sample`, `map-indexed`, `map`, `replace`, `drop`, `remove`, `cat`, `partition-all`, `interpose`, `mapcat`, `dedupe`, `drop-while`, `partition-by`, `take-while`, `take`, `keep`, `filter`, `halt-when` |
+
 ## `=>>` Auto Parallelization
 `injest` provides a parallel version of `x>>` as well. `=>>` leverages Clojure's parallel [`fold`](https://clojuredocs.org/clojure.core.reducers/fold) [reducer](https://clojure.org/reference/reducers#_using_reducers) in order to execute stateless transducers over a [Fork/Join pool](http://gee.cs.oswego.edu/dl/papers/fj.pdf). Remaining stateful transducers are `comp`ed and threaded just like `x>>`.
 
@@ -274,7 +280,13 @@ Just over 3 seconds. Much, much better!
 
 Again, in local dev your times may look a bit different. On my Macbook Pro here, those times are `11812.604504`, `5096.267348` and `933.940569` msecs. So, in other words, `=>>` can sometimes be 5 times faster than `x>>` and 10 times faster than `->>`, depending on the shape of your workloads and the number of cores you have available.
 
-> There is also a parallel thread macro (`|>>`) that uses `core.async/pipeline` for parallelization. It's still available for folks interested in improving it, but is not recomended for general use. `=>>` performs better in most cases. A soon-to-be-updated analysis ([shootout.md](https://github.com/johnmn3/injest/blob/main/docs/shootout.md)) compares the differences between `|>>` and `=>>`. 
+> There is also a parallel thread macro (`|>>`) that uses `core.async/pipeline` for parallelization. It's still available for folks interested in improving it, but is not recomended for general use. `=>>` performs better in most cases. A soon-to-be-updated analysis ([shootout.md](https://github.com/johnmn3/injest/blob/main/docs/shootout.md)) compares the differences between `|>>` and `=>>`.
+
+### Available Parallel Transducers
+| These are the core functions that are available to use as parallel transducers in a `=>>` thread-last: |
+| --- |
+| `dedupe`, `disj!`, `dissoc!`, `filter`, `keep`, `map`, `random-sample`, `remove`, `replace`, `take-while`, `halt-when`, `mapcat`, `cat` |
+
 ## Clojurescript
 In Clojurescript we don't yet have parallel thread macro implementations but for `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
 ```clojure
@@ -345,6 +357,44 @@ In Clojurescript, you can add another Clojure (`*.clj`) namespace to your projec
 (i.s/regxf! 'my.cljs.xforms.library/sliding-window)
 ```
 Or, if a transducer library like `net.cgrand.xforms` exports the same namespaces and names for both Clojure and Clojurescript, you can just `(i.s/reg-xf! x/reduce)` in a Clojure namespace in your project and then it will be available to the `x>>`/`=>>` threads in both your Clojure and Clojurescript namespaces.
+
+## Reporting Instrumentation
+You can optionally instrument the `x>>` and `=>>` macros for profiling code in a deployed runtime environment like so:
+```clojure
+(ns ...
+  (:require
+   [injest.report :as r]
+   [injest.report.path :as injest :refer [+> +>> x>> =>>]]))
+```
+Then in some core namespace, just register a report handler and then turn it on:
+```clojure
+(r/add-report-tap! println 60) ;; <- or tap>, log/info, etc
+(r/report! true)
+```
+If you don't provide `add-report-tap!` a second seconds parameter it will default to 10 seconds. The above expressions will handle reporting events with the `println` function, called once every 60 seconds.
+
+Then, in any namespace, be sure to require the macros from the `injest.report.path` namespace:
+```clojure
+(ns ...
+  (:require
+   [injest.report.path :as injest :refer [+> +>> x>> =>>]]))
+```
+Then you can use `x>>` and `=>>` like you normally would, but you will see a report on all instances in the repl:
+```clojure
+acme.core?line=15&col=5
+x>> is 2.93 times faster than +>>
+
+acme.util?line=32&col=5
+x>> is 1.89 times faster than +>>
+
+acme.state?line=44&col=5
+=>> is 1.02 times faster than x>>
+ and 
+x>> is 2.0 times faster than +>>
+```
+As you can see, the first line of a given report result is the namespace, along with `?line=` and the line number and `&col=` and the column number. For the `x>>` variant, only `x>>` and `+>>` are compared. When `=>>` is used, all three of `=>>`, `x>>` and `+>>` are compared.
+
+This allows you to leverage the instrumented versions of the macros in order to assess which one is most appropriate for the runtime load in your actually running application.
 # Caveats
 It should be noted as well:
 

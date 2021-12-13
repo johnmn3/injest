@@ -1,9 +1,15 @@
 (ns injest.test
   (:require
    [injest.state :as i.s]
-   [injest.path :as injest :refer [+> +>> x> x>> =>>]]))
+   [injest.report :as r]
+   [injest.report.path :as injest :refer [+> +>> x>> =>>]]))
 
 (comment
+
+  ;; reporting not yet working in cljs
+  (r/add-report-tap! println)
+  (r/report! true)
+  (r/report! false)
 
   ;; these aren't workign in cljs
   (i.s/regxf! 'cljs.core/map)
