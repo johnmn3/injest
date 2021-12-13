@@ -7,7 +7,7 @@
 (def report-taps (atom {}))
 
 (defn flc [form]
-  (let [f (namespace ::x)
+  (let [f #?(:clj *file* :cljs (namespace ::x))
         {:as m :keys [line column]} (meta form)
         k (str f "?line=" line "&col=" column)]
     k))
