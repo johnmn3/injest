@@ -3,7 +3,7 @@
   (:require [org.corfield.build :as bb]))
 
 (def lib 'net.clojars.john/injest)
-(def version "0.1.0-beta.4")
+(def version "0.1.0-beta.5")
 
 ;; clojure -T:build ci
 ;; clojure -T:build deploy

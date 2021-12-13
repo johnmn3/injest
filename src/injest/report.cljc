@@ -6,9 +6,9 @@
 (def report-live? (atom false))
 (def report-taps (atom {}))
 
-(defn flc [form]
+(defn flc [form-meta]
   (let [f #?(:clj *file* :cljs (namespace ::x))
-        {:as m :keys [line column]} (meta form)
+        {:as m :keys [line column]} form-meta
         k (str f "?line=" line "&col=" column)]
     k))
 
@@ -26,14 +26,13 @@
   (let [the-times (take 99 (or times '()))]
     (vec (conj the-times new-time))))
 
-(defn monitor [k applicator body]
+(defmacro monitor [k applicator body]
   `(let [res# (tv (~applicator ~@body))
          t# (:time res#)
          result# (:res res#)]
      (swap! mon update-in [~k ~(str applicator)]
             #(do {:times (add-time (:times %) (:time res#))
-                  :time (int (* 1.0 (/ (apply + (:times %)) (inc (count (:times %))))))
-                  :res (:res res#)}))
+                  :time (int (* 1.0 (/ (apply + (:times %)) (inc (count (:times %))))))}))
      result#))
 
 ;; render report

@@ -6,11 +6,13 @@
 
 (comment
 
-  (r/add-report-tap! println)
+  (r/add-report-tap! println 20)
+  (r/report! true)
   (r/report! false)
 
+  
   (dotimes [_ 10]
-    (x>> (range 1000000)
+    (=>> (range 1000000)
          (map inc)
          (filter odd?)
          (mapcat #(do [% (dec %)]))
@@ -26,27 +28,22 @@
          (apply +)
          time))
 
-  (dotimes [_ 10]
-    (x>> (range 1000000)
+  (macroexpand
+    '(=>> (range 1000000)
          (map inc)
-         (filter odd?)
-      ;;  (mapv dec)
-         (map (partial + 10))
-         (filter even?)
-      ;;  (x/reduce +)
-      ;;  first
          (apply +)
          time))
+  (x>> (range 1000000)
+       (map inc)
+       (apply +)
+       time)
 
   (dotimes [_ 10]
     (=>> (range 1000000)
          (map inc)
          (filter odd?)
-      ;;  (mapv dec)
          (map (partial + 10))
          (filter even?)
-      ;;  (x/reduce +)
-      ;;  first
          (apply +)
          time))
   
