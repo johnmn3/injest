@@ -6,11 +6,9 @@
 (def report-live? (atom false))
 (def report-taps (atom {}))
 
-(defn flc [form-meta]
-  (let [f #?(:clj *file* :cljs (namespace ::x))
-        {:as m :keys [line column]} form-meta
-        k (str f "?line=" line "&col=" column)]
-    k))
+(defn flc [f form-meta]
+  (let [{:as m :keys [line column]} form-meta]
+    (str f "?line=" line "&col=" column)))
 
 (defn now []
   #?(:clj (.toEpochMilli (java.time.Instant/now))

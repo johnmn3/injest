@@ -33,7 +33,7 @@
   `(if-not @r/report-live?
      (injest.path/x>> ~x ~@thread)
      (let [a?# (= 0 (rand-int 2))
-           k# (r/flc ~(meta &form))]
+           k# (r/flc ~(namespace ::x) ~(meta &form))]
        (if a?#
          (r/monitor k# injest.path/x>> ~(concat [x] thread))
          (r/monitor k# injest.path/+>> ~(concat [x] thread))))))
@@ -48,7 +48,7 @@
            `(if-not @r/report-live?
               (injest.path/x>> ~x ~@thread)
               (let [n# (rand-int 3)
-                    k# (r/flc ~(meta &form))]
+                    k# (r/flc ~(namespace ::x) ~(meta &form))]
                 (case n#
                   0 (r/monitor k# injest.path/=>> ~(concat [x] thread))
                   1 (r/monitor k# injest.path/x>> ~(concat [x] thread))
