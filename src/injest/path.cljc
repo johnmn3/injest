@@ -5,7 +5,7 @@
 
 ;; non-transducer versions, with path navigation, for untransducifying a transducified path thread
 (defmacro +>
-  "Just like ->> but for ints will index into vectors and sequences and `get` 
+  "Just like -> but for ints will index into vectors and sequences and `get` 
    into maps, whereas for strings, booleans and nils, will be passed to the 
    thread-value as a lookup param. Also wraps lambdas.
    As in:
