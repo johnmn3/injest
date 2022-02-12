@@ -8,7 +8,7 @@
 
 (defn flc [f form-meta]
   (let [{:as m :keys [line column]} form-meta]
-    (str f "?line=" line "&col=" column)))
+    (str "{:namespace \"" f "\"\n :line " line "\n :column " column)))
 
 (defn now []
   #?(:clj (.toEpochMilli (java.time.Instant/now))
@@ -59,15 +59,15 @@
         diff2 (round (* 1.0 (/ (:t mid-ts) (:t max-ts))))]
     (if-not t3
       (if (= diff1 1.0)
-        (str (:s min-ts) " and " (:s mid-ts) " are basically the same speed")
-        (str (:s mid-ts) " is " diff1 " times faster than " (:s min-ts)))
+        (str " :" (:s min-ts) " \"" (:s min-ts) " and " (:s mid-ts) " are basically the same speed\"")
+        (str " :" (:s mid-ts) " \"" (:s mid-ts) " is " diff1 " times faster than " (:s min-ts) "\""))
       (str (if (= diff2 1.0)
-             (str (:s max-ts) " and " (:s mid-ts) " are basically the same speed")
-             (str (:s max-ts) " is " diff2 " times faster than " (:s mid-ts)))
-           "\n and \n"
+             (str " :" (:s max-ts) " \"" (:s max-ts) " and " (:s mid-ts) " are basically the same speed\"")
+             (str " :" (:s max-ts) " \"" (:s max-ts) " is " diff2 " times faster than " (:s mid-ts) "\""))
+           "\n" ;"\n and \n"
            (if (= diff1 1.0)
-             (str (:s mid-ts) " and " (:s min-ts) " are basically the same speed")
-             (str (:s mid-ts) " is " diff1 " times faster than " (:s min-ts)))))))
+             (str " :" (:s mid-ts) " \"" (:s mid-ts) " and " (:s min-ts) " are basically the same speed\"")
+             (str " :" (:s mid-ts) " \"" (:s mid-ts) " is " diff1 " times faster than " (:s min-ts) "\"}"))))))
 
 (defn report []
   (->> @mon

@@ -15,7 +15,7 @@ Clojure's [threading macros](https://clojure.org/guides/threading_macros) (the `
 Place the following in the `:deps` map of your `deps.edn` file:
 ```clojure
   ...
-  net.clojars.john/injest {:mvn/version "0.1.0-beta.6"}
+  net.clojars.john/injest {:mvn/version "0.1.0-beta.7"}
   ...
 ```
 ### clj-kondo
@@ -30,7 +30,7 @@ To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop thi
 ```clojure
 clj -Sdeps \
     '{:deps 
-      {net.clojars.john/injest {:mvn/version "0.1.0-beta.6"}
+      {net.clojars.john/injest {:mvn/version "0.1.0-beta.7"}
        criterium/criterium {:mvn/version "0.4.6"}
        net.cgrand/xforms {:mvn/version "0.19.2"}}}'
 ```
@@ -381,16 +381,23 @@ Then, in any namespace, be sure to require the macros from the `injest.report.pa
 ```
 Then you can use `x>>` and `=>>` like you normally would, but you will see a report on all instances in the repl:
 ```clojure
-acme.core?line=15&col=5
-x>> is 2.93 times faster than +>>
+{:namespace "injest.test"
+ :line 15
+ :column 5
+ :x>> "x>> is 1.08 times faster than =>>"
+ :=>> "=>> is 2.67 times faster than +>>"}
 
-acme.util?line=32&col=5
-x>> is 1.89 times faster than +>>
+{:namespace "injest.test"
+ :line 38
+ :column 3
+ :+>> "+>> is 2.5 times faster than x>>"}
 
-acme.state?line=44&col=5
-=>> is 1.02 times faster than x>>
- and 
-x>> is 2.0 times faster than +>>
+{:namespace "injest.test"
+ :line 44
+ :column 5
+ :=>> "=>> is 1.9 times faster than x>>"
+ :x>> "x>> is 1.4 times faster than +>>"}
+
 ```
 As you can see, the first line of a given report result is the namespace, along with `?line=` and the line number and `&col=` and the column number. For the `x>>` variant, only `x>>` and `+>>` are compared. When `=>>` is used, all three of `=>>`, `x>>` and `+>>` are compared.
 

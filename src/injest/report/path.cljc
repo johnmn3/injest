@@ -1,7 +1,8 @@
 (ns injest.report.path
   (:require
    [injest.path :as p]
-   [injest.report :as r])
+   [injest.report :as r]
+   #?(:cljs [cljs.analyzer :as ana]))
   #?(:cljs (:require-macros [injest.report.path])))
 
 ;; non-transducer versions, with path navigation, for untransducifying a transducified path thread
@@ -25,6 +26,9 @@
   [x & forms]
   `(p/+>> ~x ~@forms))
 
+(defmacro get-namespace []
+  `(do #?(:clj ~*ns* :cljs ~(name ana/*cljs-ns*))))
+
 ;; transducer version
 (defmacro x>>
   "Just like +>> but first composes transducers into a function that sequences
@@ -33,7 +37,8 @@
   `(if-not @r/report-live?
      (injest.path/x>> ~x ~@thread)
      (let [a?# (= 0 (rand-int 2))
-           k# (r/flc ~(namespace ::x) ~(meta &form))]
+           ans# (get-namespace)
+           k# (r/flc ans# ~(meta &form))]
        (if a?#
          (r/monitor k# injest.path/x>> ~(concat [x] thread))
          (r/monitor k# injest.path/+>> ~(concat [x] thread))))))
@@ -48,7 +53,8 @@
            `(if-not @r/report-live?
               (injest.path/x>> ~x ~@thread)
               (let [n# (rand-int 3)
-                    k# (r/flc ~(namespace ::x) ~(meta &form))]
+                    ans# (get-namespace)
+                    k# (r/flc ans# ~(meta &form))]
                 (case n#
                   0 (r/monitor k# injest.path/=>> ~(concat [x] thread))
                   1 (r/monitor k# injest.path/x>> ~(concat [x] thread))
