@@ -27,7 +27,7 @@
   `(p/+>> ~x ~@forms))
 
 (defmacro get-namespace []
-  `(do #?(:clj ~*ns* :cljs ~(name ana/*cljs-ns*))))
+  (str *ns*))
 
 ;; transducer version
 (defmacro x>>
