@@ -288,7 +288,11 @@ Again, in local dev your times may look a bit different. On my Macbook Pro here,
 | `dedupe`, `disj!`, `dissoc!`, `filter`, `keep`, `map`, `random-sample`, `remove`, `replace`, `take-while`, `halt-when`, `mapcat`, `cat` |
 
 ## Clojurescript
-In Clojurescript we don't yet have parallel thread macro implementations but for `x>>` the performance gains are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
+~In Clojurescript we don't yet have parallel thread macro implementations but for `x>>`~ 
+
+> Update: The parallel (`=>>`) thread macro has been implemented in [`cljs-thread`](https://github.com/johnmn3/cljs-thread?tab=readme-ov-file). We'll get into the Clojurescript version of `=>>` below, but first let's look at the single threaded `x>>`.
+
+The performance gains for `x>>` are even more pronounced than in Clojure. On my macbook pro, with an initial value of `(range 1000000)` in the above thread from our first example, the default threading macro `->>` produces:
 ```clojure
 (->> (range 1000000)
      (map inc)
@@ -325,6 +329,43 @@ While the `x>>` version produces:
 That's a _six times_ speedup!
 
 Perhaps that speedup would not be so large if we tested both versions in _advanced_ compile mode. Then the difference in speed might come closer to the Clojure version. In any case, this is some very low-hanging performance fruit.
+### `=>>` in Clojurescript
+So, suppose you have some non-trivial work:
+```clojure
+(defn flip [n]
+  (apply comp (take n (cycle [inc dec]))))
+```
+On a single thread, in Chrome, this takes between 16 and 20 seconds (on this computer):
+```clojure
+(->> (range)
+     (map (flip 100))
+     (map (flip 100))
+     (map (flip 100))
+     (take 1000000)
+     (apply +)
+     time)
+```
+On Safari and Firefox, that will take between 60 and 70 seconds.
+
+Let's try it with `=>>`:
+```clojure
+(=>> (range)
+     (map (flip 100))
+     (map (flip 100))
+     (map (flip 100))
+     (take 1000000)
+     (apply +)
+     time)
+```
+On Chrome, that'll take only about 8 to 10 seconds. On Safari it takes about 30 seconds and in Firefox it takes around 20 seconds.
+
+So in Chrome and Safari, you can roughly double your speed and in Firefox you can go three or more times faster.
+
+By changing only one character, we can double or triple our performance, all while leaving the main thread free to render at 60 frames per second. Notice also how it's lazy :)
+
+See the [`cljs-thread`] repo to learn more about how to set things up with the web workers.
+
+> Note: On the main/screen thread, `=>>` returns a promise. `=>>` defaults to a chunk size of 512.
 ## Extending `injest`
 The `injest.state` namespaces provides the `reg-xf!` and `reg-pxf!` macros that can take one or more transducers. Only stateless transducers (or, more precisely, transducers that can be used safely within a parallel `fold` or `pipeline` context) should be registered with `reg-pxf!`. `injest`'s thread macros will then include those functions when deciding which forms should be treated as transducers. You should only need to call `reg-xf!` in one of your initially loaded namesapces.
 ```clojure
