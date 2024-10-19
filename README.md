@@ -363,7 +363,7 @@ So in Chrome and Safari, you can roughly double your speed and in Firefox you ca
 
 By changing only one character, we can double or triple our performance, all while leaving the main thread free to render at 60 frames per second. Notice also how it's lazy :)
 
-See the [`cljs-thread`] repo to learn more about how to set things up with the web workers.
+See the [`cljs-thread`](https://github.com/johnmn3/cljs-thread) repo to learn more about how to set things up with the web workers.
 
 > Note: On the main/screen thread, `=>>` returns a promise. `=>>` defaults to a chunk size of 512.
 ## Extending `injest`
