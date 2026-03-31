@@ -1,6 +1,7 @@
 (ns injest.path-unit-test
   "Unit tests for the path navigation primitives: path->, path->>, get-or-nth."
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [injest.impl :as i]))
 
 ;; ===================================================================
@@ -99,7 +100,6 @@
 (deftest path-thread-first-protected-fns
   (testing "fn form is NOT threaded into"
     (let [result (i/path-> '(fn [y] (inc y)) 'x)]
-      ;; fn is protected, so goes to :else branch: (form x)
       (is (= (list '(fn [y] (inc y)) 'x) result))))
 
   (testing "partial form is NOT threaded into"

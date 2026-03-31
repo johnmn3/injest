@@ -8,6 +8,10 @@
    :extra-deps {org.clojure/test.check {:mvn/version "1.1.0"}
                 io.github.cognitect-labs/test-runner
                 {:git/tag "v0.5.0" :git/sha "48c3c67"}}}
+  :cljs-test
+  {:extra-paths ["test"]
+   :extra-deps {olical/cljs-test-runner {:mvn/version "3.8.1"}}
+   :main-opts ["-m" "cljs-test-runner.main" "-x" "node"]}
   :build {:deps {io.github.seancorfield/build-clj
                  {:git/tag "v0.3.1" :git/sha "996ddfa"}}
           :ns-default build}}}

@@ -1,7 +1,8 @@
 (ns injest.edge-cases-test
   "Edge case tests: empty threads, nil inputs, single forms, nesting,
    large collections, deeply nested paths, identity, duplicates."
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [injest.path :as p]
             [injest.classical :as c]))
 
@@ -206,10 +207,6 @@
                     (p/+> :b)))))
 
   (testing "x>> as argument in x>>"
-    ;; (map inc) on [1 2 3] = (2 3 4)
-    ;; inner x>>: (map inc) on [0 1 2] = (1 2 3), (apply + (1 2 3)) = 6
-    ;; (map #(+ % 6)) on (2 3 4) = (8 9 10)
-    ;; (apply + (8 9 10)) = 27
     (is (= 27
            (p/x>> [1 2 3]
                   (map inc)
@@ -222,15 +219,9 @@
 
 (deftest interleaved-transducers-and-fns
   (testing "x>> with transducers then apply"
-    ;; (map inc) (filter odd?) compose as transducers on [1 2 3 4]:
-    ;; [1 2 3 4] -> inc -> [2 3 4 5] -> filter odd? -> [3 5]
-    ;; (apply + [3 5]) = 8
     (is (= 8 (p/x>> [1 2 3 4] (map inc) (filter odd?) (apply +)))))
 
   (testing "x>> with non-xf, xfs, non-xf"
-    ;; (range 10) = (0..9), (map inc) (filter even?) compose:
-    ;; (0..9) -> inc -> (1..10) -> filter even? -> (2 4 6 8 10)
-    ;; (apply max (2 4 6 8 10)) = 10
     (is (= 10
            (p/x>> 10
                   (range)

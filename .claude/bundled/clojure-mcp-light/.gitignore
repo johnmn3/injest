@@ -1,0 +1,26 @@
+# Hook logs
+hook-logs/
+.clojure-mcp-light-hooks.log
+
+# Clojure/LSP directories
+.clj-kondo/
+.lsp/
+.cpcache/
+
+# ClojureMCP config
+.clojure-mcp/
+
+# Temporary files
+*~
+\#*\#
+.#*
+
+# nREPL port file
+.nrepl-port
+.nrepl-session
+
+# MCP tasks
+.mcp-tasks*
+
+# Claude Code local config
+.claude/

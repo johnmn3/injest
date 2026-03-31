@@ -1,6 +1,7 @@
 (ns injest.transducer-detection-test
   "Unit tests for transducer detection, registration, and thread grouping."
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [injest.impl :as i]
             [injest.state :as s]
             [injest.data :as d]))
@@ -154,7 +155,7 @@
       (is (= (range 2 102) (vec (f (range 1 101))))))))
 
 ;; ===================================================================
-;; fold-xfn — parallel fold executor
+;; fold-xfn — parallel fold executor (falls back to xfn in CLJS)
 ;; ===================================================================
 
 (deftest fold-xfn-tests
@@ -177,7 +178,7 @@
              (vec (fold-f (range 100))))))))
 
 ;; ===================================================================
-;; pipeline-xfn — async pipeline executor
+;; pipeline-xfn — async pipeline executor (falls back to xfn in CLJS)
 ;; ===================================================================
 
 (deftest pipeline-xfn-tests

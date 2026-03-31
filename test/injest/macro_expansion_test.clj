@@ -2,10 +2,10 @@
   "Tests that verify macro expansion forms for all injest macros.
    Inspired by https://github.com/johnmn3/injest/issues/3 —
    macroexpand tests are the highest-signal way to verify a macro library."
-  (:require [clojure.test :refer :all]
-            [injest.path :as p]
-            [injest.classical :as c]
-            [injest.impl :as i]))
+  (:require [clojure.test :refer [deftest testing is]]
+            #_:clj-kondo/ignore [injest.path :as p]
+            #_:clj-kondo/ignore [injest.classical :as c]
+            #_:clj-kondo/ignore [injest.impl :as i]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers

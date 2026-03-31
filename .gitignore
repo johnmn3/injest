@@ -19,3 +19,4 @@ linux-install-*
 .clj-kondo/net.clojars.john
 .lsp
 out
+cljs-test-runner-out
