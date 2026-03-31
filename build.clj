@@ -15,12 +15,18 @@
           :developerConnection "scm:git:ssh://git@github.com/johnmn3/injest.git"
           :tag version})
 
+(def pom-data
+  [[:licenses
+    [:license
+     [:name "Zero-Clause BSD"]
+     [:url "https://opensource.org/licenses/0BSD"]]]])
+
 (defn test "Run the tests." [opts]
   (bb/run-tests opts))
 
 (defn ci "Run the CI pipeline of tests (and build the JAR)." [opts]
   (-> opts
-      (assoc :lib lib :version version :scm scm)
+      (assoc :lib lib :version version :scm scm :pom-data pom-data)
       (bb/run-tests)
       (bb/clean)
       (bb/jar)))
