@@ -465,4 +465,4 @@ Want to implement the `somex>>` macro? Just copy how I did it and feel free to s
 
 # License
 
-Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
+Distributed under the [Zero-Clause BSD License (0BSD)](https://opensource.org/licenses/0BSD).
