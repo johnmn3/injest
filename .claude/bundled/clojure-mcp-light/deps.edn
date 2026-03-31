@@ -1,0 +1,2 @@
+{:aliases {:nrepl {:deps {nrepl/nrepl {:mvn/version "1.5.1"}}
+                   :main-opts ["-m" "nrepl.cmdline"]}}}

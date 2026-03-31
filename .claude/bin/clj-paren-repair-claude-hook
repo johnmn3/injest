@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# clj-paren-repair-claude-hook
+#
+# Wrapper that invokes bhauman/clojure-mcp-light's hook via babashka.
+# Reads Claude hook JSON from stdin, repairs unbalanced delimiters and
+# optionally formats Clojure files with cljfmt.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BUNDLED_DIR="$SCRIPT_DIR/../bundled/clojure-mcp-light"
+
+# Check bb is available
+if ! command -v bb &>/dev/null; then
+  # Pass through — no repair available
+  cat
+  exit 0
+fi
+
+# Forward stdin to the real hook implementation
+exec bb --config "$BUNDLED_DIR/bb.edn" -m clojure-mcp-light.hook -- "$@"
