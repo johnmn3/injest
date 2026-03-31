@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.1.0-beta.9] - 2026-03-31
+- fix clj-kondo macroexpand hook StackOverflowError: `defn` -> `defmacro` for `+>` and `+>>` in exported hook (fixes clj-kondo/clj-kondo#2798)
+- move clj-kondo exports from `src/clj-kondo/` to `resources/` per standard classpath packaging convention
+- add missing macroexpand hooks for `|>` and `|>>`
+- add `"resources"` to `:paths` in deps.edn
+- add comprehensive test suite: 103 tests, 420 assertions covering macro expansion, path navigation, transducer detection, classical namespace, equivalence proofs, edge cases, and parallelism
+
 ## [0.1.0-beta.7] - 2022-02-12
 - went to beta
 - added monitoring
