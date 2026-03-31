@@ -27,14 +27,14 @@
         :else
         (list form x)))
 
-(defn +>
+(defmacro +>
   [x & forms]
   (loop [x x, forms forms]
     (if forms
       (recur (path-> (first forms) x) (next forms))
       x)))
 
-(defn +>>
+(defmacro +>>
   [x & forms]
   (loop [x x, forms forms]
     (if forms

@@ -1,1 +1,1 @@
-{:config-paths ["../src/clj-kondo/clj-kondo.exports/net.clojars.john/injest"]}
+{:config-paths ["../resources/clj-kondo.exports/net.clojars.john/injest"]}

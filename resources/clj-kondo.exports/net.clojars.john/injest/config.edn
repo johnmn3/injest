@@ -19,10 +19,10 @@
                        injest.path/x>  injest.path/+>
                        injest.path/x>> injest.path/+>>
                        injest.path/=>  injest.path/+>
-                       injest.path/=>> injest.path/+>>}}
+                       injest.path/=>> injest.path/+>>
+                       injest.path/|>  injest.path/+>
+                       injest.path/|>> injest.path/+>>}}
 
  :linters {:injest.path/+> {:level :error}
            :injest.path/+>> {:level :error}
-           :unused-binding {:level :off}}
- 
- }
+           :unused-binding {:level :off}}}
