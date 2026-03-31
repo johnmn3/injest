@@ -1,7 +1,8 @@
 (ns injest.parallelism-test
   "Tests for parallel execution variants: |>, |>>, =>, =>>
    Verifies correctness, order preservation, and equivalence to sequential."
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [injest.path :as p]
             [injest.classical :as c]))
 

@@ -12,7 +12,19 @@
            injest.path/=>  clojure.core/->
            injest.path/=>> clojure.core/->>
            injest.path/|>  clojure.core/->
-           injest.path/|>> clojure.core/->>}
+           injest.path/|>> clojure.core/->>
+
+           injest.classical/x>  clojure.core/->
+           injest.classical/x>> clojure.core/->>
+           injest.classical/=>  clojure.core/->
+           injest.classical/=>> clojure.core/->>
+           injest.classical/|>  clojure.core/->
+           injest.classical/|>> clojure.core/->>
+
+           injest.report.path/+>  clojure.core/->
+           injest.report.path/+>> clojure.core/->>
+           injest.report.path/x>> clojure.core/->>
+           injest.report.path/=>> clojure.core/->>}
 
  :hooks {:macroexpand {injest.path/+>  injest.path/+>
                        injest.path/+>> injest.path/+>>
@@ -23,6 +35,5 @@
                        injest.path/|>  injest.path/+>
                        injest.path/|>> injest.path/+>>}}
 
- :linters {:injest.path/+> {:level :error}
-           :injest.path/+>> {:level :error}
-           :unused-binding {:level :off}}}
+ :linters {:unused-binding {:level :off}
+           :type-mismatch {:level :off}}}

@@ -1,1 +1,2 @@
-{:config-paths ["../resources/clj-kondo.exports/net.clojars.john/injest"]}
+{:config-paths ["../resources/clj-kondo.exports/net.clojars.john/injest"]
+ :output {:exclude-files ["src/injest/test.clj" "src/injest/test.cljs"]}}

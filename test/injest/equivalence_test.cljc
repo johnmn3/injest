@@ -1,7 +1,8 @@
 (ns injest.equivalence-test
   "Tests proving equivalence relationships between injest macro variants.
    These tests ensure the macro family is internally consistent."
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj [clojure.test :refer [deftest testing is]]
+               :cljs [cljs.test :refer-macros [deftest testing is]])
             [injest.path :as p]
             [injest.classical :as c]))
 

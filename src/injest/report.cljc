@@ -1,5 +1,4 @@
 (ns injest.report
-  (:require [clojure.edn :as edn])
   #?(:cljs (:require-macros [injest.report])))
 
 (def mon (atom {}))

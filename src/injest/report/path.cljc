@@ -1,8 +1,7 @@
 (ns injest.report.path
   (:require
    [injest.path :as p]
-   [injest.report :as r]
-   #?(:cljs [cljs.analyzer :as ana]))
+   [injest.report :as r])
   #?(:cljs (:require-macros [injest.report.path])))
 
 ;; non-transducer versions, with path navigation, for untransducifying a transducified path thread
