@@ -18,12 +18,6 @@ Place the following in the `:deps` map of your `deps.edn` file:
   net.clojars.john/injest {:mvn/version "0.1.0-beta.9"}
   ...
 ```
-### clj-kondo
-Make clj-kondo/Clojure-LSP aware of `injest` by adding `"net.clojars.john/injest"` to the `:config-paths` vector of your `.clj-kondo/config.edn` file:
-```clojure
-{:config-paths ["net.clojars.john/injest"]}
-```
-This will automatically import `injest`'s lint definitions in Calva and other IDE's that leverage clj-kondo and/or Clojure-LSP.
 
 ### Quickstart
 To try it in a repl right now with `criterium` and `net.cgrand.xforms`, drop this in your shell:
